@@ -8,21 +8,11 @@ export const Hero = () => {
     <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
       {/* 1. Background Video */}
       <div className="absolute inset-0 z-0">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover scale-105" // scale-105 prevents white edges
-        >
-          <source src="/assets/videos/hero.mp4" type="video/mp4" />
-          {/* Fallback image if video fails */}
-          <img
-            src="/assets/images/hero-fallback.png"
-            alt="Ekovibes Destination"
-            className="w-full h-full object-cover"
-          />
-        </video>
+        <img
+          src="/assets/images/events.jpg"
+          alt="Ekovibes Destination"
+          className="w-full h-full object-cover"
+        />
         {/* Dark Overlay Scrim */}
         <div className="absolute inset-0 bg-black/50" />
       </div>
