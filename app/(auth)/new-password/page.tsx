@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,6 +24,7 @@ import {
   IconLoader2,
 } from "@tabler/icons-react";
 import { postData } from "@/lib/api";
+import { Loader } from "@/components/Loader";
 
 const schema = z
   .object({
@@ -58,6 +59,8 @@ function NewPasswordContent() {
   const email = searchParams.get("email") ?? "";
   const otp = searchParams.get("otp") ?? "";
 
+  const [pending, startTransition] = useTransition();
+
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -66,33 +69,34 @@ function NewPasswordContent() {
     defaultValues: { newPassword: "", confirmPassword: "" },
   });
 
-  const { isSubmitting, watch } = form;
+  const { watch } = form;
   const password = watch("newPassword");
   const strength = REQUIREMENTS.filter((r) => r.test(password)).length;
 
   const onSubmit = async (data: FormValues) => {
-    if (!email || !otp) {
-      toast.error("Session expired. Please restart the password reset flow.");
-      router.push("/forgot-password");
-      return;
-    }
-    try {
-      await postData("/auth/set-new-password", {
-        email,
-        otp,
-        newPassword: data.newPassword,
-        confirmPassword: data.confirmPassword,
-      });
-      toast.success("Password updated! Please sign in.");
-      router.push("/login");
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? "Failed to update password");
-    }
+    startTransition(async () => {
+      if (!email || !otp) {
+        toast.error("Session expired. Please restart the password reset flow.");
+        router.push("/forgot-password");
+        return;
+      }
+      try {
+        await postData("/auth/set-new-password", {
+          email,
+          otp,
+          newPassword: data.newPassword,
+          confirmPassword: data.confirmPassword,
+        });
+        toast.success("Password updated! Please sign in.");
+        router.push("/login");
+      } catch (e: any) {
+        toast.error(e?.response?.data?.message ?? "Failed to update password");
+      }
+    });
   };
 
   return (
     <main className="min-h-screen bg-background flex items-center justify-center px-6 relative">
-
       <div className="w-full max-w-sm relative z-10">
         <div className="mb-10 text-left">
           <h1 className="text-3xl font-bold uppercase tracking-tighter text-foreground mb-2">
@@ -193,9 +197,15 @@ function NewPasswordContent() {
                 return (
                   <div key={req.label} className="flex items-center gap-2">
                     {met ? (
-                      <IconCheck size={12} className="text-foreground shrink-0" />
+                      <IconCheck
+                        size={12}
+                        className="text-foreground shrink-0"
+                      />
                     ) : (
-                      <IconX size={12} className="text-muted-foreground shrink-0" />
+                      <IconX
+                        size={12}
+                        className="text-muted-foreground shrink-0"
+                      />
                     )}
                     <span
                       className={`text-[9px] uppercase tracking-widest ${met ? "text-foreground" : "text-muted-foreground"}`}
@@ -209,20 +219,17 @@ function NewPasswordContent() {
 
             <Button
               type="submit"
-              disabled={isSubmitting || strength < 3}
+              disabled={pending || strength < 3}
               className="w-full bg-foreground text-background hover:bg-foreground/90 py-7 rounded-none font-bold uppercase tracking-[0.3em] text-[10px] disabled:opacity-40"
             >
-              {isSubmitting ? (
-                <IconLoader2 size={16} className="animate-spin mr-2" />
-              ) : null}
-              Update Password
+              {pending ? <Loader text="Updating..." /> : "Update Password"}
             </Button>
           </form>
         </Form>
 
         <div className="mt-12 text-center">
           <p className="text-[9px] uppercase tracking-widest text-muted-foreground">
-            Secured by Ekovibe Protocol 2.0
+            Secured by Ekovibe
           </p>
         </div>
       </div>
