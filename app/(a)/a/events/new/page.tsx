@@ -2,7 +2,8 @@
 import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+// import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@hookform/resolvers/zod-v4";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -90,10 +91,12 @@ const step4Schema = z.object({
   isMemberOnly: z.boolean(),
 });
 
-const fullSchema = step1Schema
-  .merge(step2Schema)
-  .merge(step3Schema)
-  .merge(step4Schema);
+const fullSchema = z.object({
+  ...step1Schema.shape,
+  ...step2Schema.shape,
+  ...step3Schema.shape,
+  ...step4Schema.shape,
+});
 
 type FormData = z.infer<typeof fullSchema>;
 
@@ -154,7 +157,9 @@ const CreateEventPage = () => {
       ["tiers"],
       ["isMemberOnly"],
     ];
-    const valid = await form.trigger(stepFieldSets[step - 1] as any);
+    // const valid = await form.trigger(stepFieldSets[step - 1] as any);
+    const fieldsToValidate = stepFieldSets[step - 1];
+    const valid = await form.trigger(fieldsToValidate);
     if (valid) setStep((s) => s + 1);
   };
 

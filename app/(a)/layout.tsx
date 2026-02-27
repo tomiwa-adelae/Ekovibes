@@ -4,16 +4,23 @@ import React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useAuthGuard } from "@/hooks/use-auth-guard";
+import { useAdminGuard } from "@/hooks/use-admin-guard";
+import { Loader2 } from "lucide-react";
 
-export default function DashboardLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isReady } = useAuthGuard();
+  const { isReady } = useAdminGuard();
 
-  // if (!isReady) return null;
+  if (!isReady) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider

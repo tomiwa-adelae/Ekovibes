@@ -4,11 +4,11 @@ import { useEffect } from "react";
 import { useAuth } from "@/store/useAuth";
 import { useRouter } from "next/navigation";
 
-/** Protects user-only routes (/dashboard, /tickets, etc.)
- *  Redirects to /login if not authenticated.
+/** Protects admin-only routes (/a/*)
+ *  Redirects to /login if not authenticated, /dashboard if not admin.
  *  Returns { user, isReady } — render nothing until isReady is true.
  */
-export function useAuthGuard() {
+export function useAdminGuard() {
   const { user, _hasHydrated } = useAuth();
   const router = useRouter();
 
@@ -16,11 +16,13 @@ export function useAuthGuard() {
     if (!_hasHydrated) return;
     if (!user) {
       router.replace("/login");
+    } else if (!user.isAdmin) {
+      router.replace("/dashboard");
     }
   }, [user, _hasHydrated, router]);
 
   return {
     user,
-    isReady: _hasHydrated && !!user,
+    isReady: _hasHydrated && !!user && !!user.isAdmin,
   };
 }

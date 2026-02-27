@@ -9,9 +9,11 @@ import { MobileNavbar } from "./MobileNavbar";
 import { homeNavLinks } from "@/constants/nav-links";
 import { UserDropdown } from "./UserDropdown";
 import { IconShoppingCart } from "@tabler/icons-react";
+import { useAuth } from "@/store/useAuth";
 
 export const Header = () => {
   const pathname = usePathname();
+  const { user, _hasHydrated } = useAuth();
 
   const isActive = (slug: string) =>
     pathname === slug || pathname.startsWith(`${slug}/`);
@@ -61,7 +63,7 @@ export const Header = () => {
               </span>
             </Link>
           </Button>
-          {false ? (
+          {_hasHydrated && user ? (
             <UserDropdown />
           ) : (
             <>

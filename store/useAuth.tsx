@@ -18,6 +18,7 @@ export type User = {
   country: string | null;
   gender: string | null;
   role: string;
+  isAdmin?: boolean;
 } | null;
 
 type AuthState = {

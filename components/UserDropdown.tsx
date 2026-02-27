@@ -13,13 +13,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSignout } from "@/hooks/use-signout";
-import { IconBell, IconHeart, IconUser } from "@tabler/icons-react";
+import {
+  IconBell,
+  IconLayoutDashboard,
+  IconShieldFilled,
+  IconTicket,
+  IconUser,
+} from "@tabler/icons-react";
 import Link from "next/link";
 import { DEFAULT_PROFILE_IMAGE } from "@/constants";
+import { useAuth } from "@/store/useAuth";
 
 export function UserDropdown() {
-  // const { user } = useAuth();
+  const { user } = useAuth();
   const handleSignout = useSignout();
+
+  const initials =
+    user
+      ? `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase()
+      : "EV";
 
   return (
     <DropdownMenu>
@@ -30,11 +42,11 @@ export function UserDropdown() {
         >
           <Avatar>
             <AvatarImage
-              src={DEFAULT_PROFILE_IMAGE}
-              alt={`picture`}
+              src={user?.image ?? DEFAULT_PROFILE_IMAGE}
+              alt={`${user?.firstName ?? "User"} avatar`}
               className="size-full object-cover"
             />
-            <AvatarFallback>Ekovibes</AvatarFallback>
+            <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <ChevronDownIcon
             size={16}
@@ -43,30 +55,53 @@ export function UserDropdown() {
           />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="min-w-52">
         <DropdownMenuLabel className="flex min-w-0 flex-col">
           <span className="text-foreground truncate text-sm font-medium">
-            Tomiwa Adelae
+            {user?.firstName} {user?.lastName}
           </span>
           <span className="text-muted-foreground truncate text-xs font-normal">
-            adelaetomiwa6@gmail.com
+            {user?.email}
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href={`/notifications`}>
+            <Link href="/dashboard">
+              <IconUser size={16} className="opacity-60" aria-hidden="true" />
+              <span>My Dashboard</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/tickets">
+              <IconTicket size={16} className="opacity-60" aria-hidden="true" />
+              <span>My Tickets</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/notifications">
               <IconBell size={16} className="opacity-60" aria-hidden="true" />
               <span>Notifications</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href={`/saved`}>
-              <IconHeart size={16} className="opacity-60" aria-hidden="true" />
-              <span>Saved Items</span>
-            </Link>
-          </DropdownMenuItem>
         </DropdownMenuGroup>
+        {user?.isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link href="/a/dashboard">
+                  <IconShieldFilled
+                    size={16}
+                    className="opacity-60"
+                    aria-hidden="true"
+                  />
+                  <span>Admin Dashboard</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignout}>
           <LogOutIcon size={16} className="opacity-60" aria-hidden="true" />

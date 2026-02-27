@@ -18,17 +18,19 @@ import { useState } from "react";
 import { Logo } from "./Logo";
 import { useTheme } from "next-themes";
 import { useSignout } from "@/hooks/use-signout";
-import { homeNavLinksMobile } from "@/constants/nav-links";
+import { homeNavLinksMobile, memberNavLinks } from "@/constants/nav-links";
+import { useAuth } from "@/store/useAuth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DEFAULT_PROFILE_IMAGE } from "@/constants";
 
 export function MobileNavbar() {
   const pathname = usePathname();
-  // const { user } = useAuth(); // Assuming logout is in your store
+  const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const handleSignout = useSignout();
 
-  const handleLinkClick = () => setOpen(false);
-
   const [open, setOpen] = useState(false);
+  const handleLinkClick = () => setOpen(false);
 
   const handleLogout = () => {
     setOpen(false);
@@ -42,10 +44,9 @@ export function MobileNavbar() {
   const isActive = (slug: string) =>
     pathname === slug || pathname.startsWith(`${slug}/`);
 
-  // Helper to render link items to avoid repetition
   const renderNavLinks = (links: any[]) => (
     <div className="grid gap-1 px-2">
-      {links.map(({ icon: Icon, slug, label, comingSoon }, index) =>
+      {links.map(({ slug, label, comingSoon }, index) =>
         comingSoon ? (
           <Button
             key={index}
@@ -53,7 +54,6 @@ export function MobileNavbar() {
             variant="ghost"
             disabled
           >
-            {/* <Icon size={20} /> */}
             {label}
             <Badge variant="secondary" className="ml-auto">
               Soon
@@ -67,15 +67,16 @@ export function MobileNavbar() {
             variant={isActive(slug) ? "default" : "ghost"}
             onClick={handleLinkClick}
           >
-            <Link href={slug}>
-              {/* <Icon size={20} /> */}
-              {label}
-            </Link>
+            <Link href={slug}>{label}</Link>
           </Button>
         ),
       )}
     </div>
   );
+
+  const initials = user
+    ? `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase()
+    : "EV";
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -100,19 +101,71 @@ export function MobileNavbar() {
         </SheetHeader>
 
         <ScrollArea className="overflow-y-auto">
-          <div className="space-y-6">
-            {/* General Navigation */}
+          <div className="space-y-6 py-4">
+            {/* User info card when logged in */}
+            {user && (
+              <div className="px-4 flex items-center gap-3">
+                <Avatar className="size-10">
+                  <AvatarImage
+                    src={user.image ?? DEFAULT_PROFILE_IMAGE}
+                    alt={`${user.firstName} avatar`}
+                    className="size-full object-cover"
+                  />
+                  <AvatarFallback>{initials}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">
+                    {user.firstName} {user.lastName}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {user.email}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Main Navigation */}
             <div>
               <p className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Menu
               </p>
               {renderNavLinks(homeNavLinksMobile)}
             </div>
+
+            {/* Member account links */}
+            {user && (
+              <>
+                <Separator />
+                <div>
+                  <p className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    My Account
+                  </p>
+                  {renderNavLinks(memberNavLinks)}
+                </div>
+              </>
+            )}
+
+            {/* Admin link */}
+            {user?.isAdmin && (
+              <>
+                <Separator />
+                <div className="px-2">
+                  <Button
+                    asChild
+                    className="justify-start gap-3 w-full"
+                    variant={isActive("/a/dashboard") ? "default" : "ghost"}
+                    onClick={handleLinkClick}
+                  >
+                    <Link href="/a/dashboard">Admin Dashboard</Link>
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </ScrollArea>
 
         <SheetFooter className="p-4 border-t bg-muted/30">
-          {false ? (
+          {user ? (
             <Button
               variant="destructive"
               className="w-full gap-2"
