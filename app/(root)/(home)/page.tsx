@@ -10,7 +10,6 @@ import { VibeReport } from "./_components/VibeReport";
 const page = () => {
   return (
     <div>
-      <Header />
       <Hero />
       <VibeCategories />
       <TheHotList />

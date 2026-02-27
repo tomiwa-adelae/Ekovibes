@@ -39,15 +39,15 @@ const categories = [
 
 export const VibeCategories = () => {
   return (
-    <section className="py-16 md:py-24 bg-black text-white">
+    <section className="py-16">
       <div className="container">
         <div className="max-w-xl">
-          <h2 className="text-sm uppercase tracking-[0.3em] text-white/50 mb-4">
+          <h2 className="text-sm uppercase tracking-[0.3em] text-muted-foreground mb-4">
             Our Ecosystem
           </h2>
           <h3 className="text-3xl md:text-5xl font-bold tracking-tighter uppercase">
             Curating every aspect <br /> of your{" "}
-            <span className="text-white/40 italic">lifestyle</span>
+            <span className="text-foreground/40 italic">lifestyle</span>
           </h3>
         </div>
 
@@ -56,7 +56,7 @@ export const VibeCategories = () => {
             <Link
               href={cat.link}
               key={index}
-              className={`group relative rounded-md w-full overflow-hidden aspect-[4/5] md:aspect-auto ${cat.gridSpan} h-[400px] bg-neutral-900`}
+              className={`group relative rounded-md w-full overflow-hidden aspect-[4/5] md:aspect-auto ${cat.gridSpan} h-[400px] bg-card`}
             >
               {/* Background Image */}
               <Image
@@ -64,14 +64,14 @@ export const VibeCategories = () => {
                 alt={cat.title}
                 width={1000}
                 height={1000}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-80"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 "
               />
 
               {/* Content */}
-              <div className="absolute inset-0 py-8 px-4 md:px-6 lg:px-8 flex flex-col justify-end bg-gradient-to-t from-black/80 via-transparent to-transparent">
+              <div className="absolute inset-0 py-8 px-4 md:px-6 lg:px-8 flex flex-col justify-end bg-gradient-to-t from-black via-transparent to-transparent">
                 <div className="flex justify-between items-end">
                   <div>
-                    <h4 className="text-2xl font-bold uppercase tracking-tight mb-2">
+                    <h4 className="text-2xl font-bold uppercase text-white tracking-tight mb-2">
                       {cat.title}
                     </h4>
                     <p className="text-sm text-white/60 max-w-[250px] leading-relaxed">

@@ -42,21 +42,21 @@ const hotItems = [
 
 export const TheHotList = () => {
   return (
-    <section className="py-16md:py-24 bg-neutral-950 overflow-hidden">
+    <section className="py-16 bg-slate-50 overflow-hidden">
       <div className="container mb-12">
         <div className="flex items-center gap-2 mb-2">
           <IconFlame className="text-yellow" size={20} fill="currentColor" />
-          <span className="text-xs uppercase tracking-[0.4em] text-white/60">
+          <span className="text-xs uppercase tracking-[0.4em] text-muted-foreground">
             Live Inventory
           </span>
         </div>
         <div className="flex justify-between items-end">
-          <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tighter uppercase">
+          <h2 className="text-4xl md:text-6xl font-bold text-foreground tracking-tighter uppercase">
             The Hot List
           </h2>
           <Link
             href="/reservations"
-            className="hidden md:block text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+            className="hidden md:block text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
           >
             View All Destinations →
           </Link>
@@ -70,7 +70,7 @@ export const TheHotList = () => {
             key={index}
             className="min-w-[300px] md:min-w-[400px] snap-start group  relative"
           >
-            <div className="aspect-[3/4] rounded-md overflow-hidden bg-neutral-900 mb-4">
+            <div className="aspect-[3/4] rounded-md overflow-hidden bg-card mb-4">
               <Image
                 width={1000}
                 height={1000}
@@ -87,18 +87,18 @@ export const TheHotList = () => {
 
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-xs text-white/40 uppercase tracking-widest mb-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">
                   {item.category}
                 </p>
-                <h4 className="text-xl font-bold text-white mb-1 uppercase tracking-tight">
+                <h4 className="text-xl font-bold text-foreground mb-1 uppercase tracking-tight">
                   {item.name}
                 </h4>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-yellow font-bold uppercase">
                     {item.status}
                   </span>
-                  <span className="h-1 w-1 rounded-full bg-white/20" />
-                  <span className="text-[10px] text-white/40 uppercase italic">
+                  <span className="h-1 w-1 rounded-full bg-foreground/20" />
+                  <span className="text-[10px] text-muted-foreground uppercase italic">
                     {item.vibe}
                   </span>
                 </div>

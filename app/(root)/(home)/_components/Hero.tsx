@@ -5,7 +5,7 @@ import { IconSearch, IconCalendar, IconMapPin } from "@tabler/icons-react";
 
 export const Hero = () => {
   return (
-    <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[90vh] py-16 flex items-center justify-center overflow-hidden">
       {/* 1. Background Video */}
       <div className="absolute inset-0 z-0">
         <img

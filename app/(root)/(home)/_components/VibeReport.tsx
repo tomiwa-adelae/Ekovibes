@@ -27,10 +27,10 @@ const articles = [
 
 export const VibeReport = () => {
   return (
-    <section className="py-16 md:py-24 bg-neutral-900 text-white">
+    <section className="py-16  bg-slate-50 text-card-foreground">
       <div className="container">
         <div>
-          <h2 className="text-sm uppercase tracking-[0.4em] text-white/40 mb-4 font-medium">
+          <h2 className="text-sm uppercase tracking-[0.4em] text-muted-foreground mb-4 font-medium">
             The Media Wing
           </h2>
           <h3 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase">
@@ -53,7 +53,7 @@ export const VibeReport = () => {
                 height={1000}
                 src={item.image}
                 alt={item.title}
-                className="size-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-70"
+                className="size-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
 
               {/* Play Button Overlay for Video content */}
@@ -68,7 +68,7 @@ export const VibeReport = () => {
                   {item.category}
                 </span>
                 <h4
-                  className={`font-bold uppercase tracking-tight leading-none ${
+                  className={`font-bold text-white uppercase tracking-tight leading-none ${
                     item.size === "large"
                       ? "text-2xl md:text-3xl lg:text-4xl"
                       : "text-xl"

@@ -25,7 +25,7 @@ const tiers = [
     name: "Black Member",
     price: "Custom",
     period: "",
-    icon: <IconInfinity className="text-white" />,
+    icon: <IconInfinity className="text-foreground" />,
     description:
       "The ultimate Life-OS. Absolute access, zero friction, total privacy.",
     features: [
@@ -42,19 +42,19 @@ const tiers = [
 
 export const Membership = () => {
   return (
-    <section className="py-16 md:py-24 bg-black text-white relative">
+    <section className="py-16 relative">
       {/* Subtle background glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-foreground/5 via-transparent to-transparent pointer-events-none" />
 
       <div className="container relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-10">
-          <h2 className="text-sm uppercase tracking-[0.5em] text-white/40 mb-4">
+          <h2 className="text-sm uppercase tracking-[0.5em] text-muted-foreground mb-4">
             Elevate Your Access
           </h2>
           <h3 className="text-4xl md:text-6xl font-bold tracking-tighter uppercase mb-6">
             The Membership
           </h3>
-          <p className="text-white/60 font-light tracking-wide">
+          <p className="text-foreground/60 font-light tracking-wide">
             Ekovibes is more than a platform; it is a key to the city. Select
             the tier that matches your pace of life.
           </p>
@@ -66,8 +66,8 @@ export const Membership = () => {
               key={index}
               className={`relative p-6 md:p-8 lg:p-12 border ${
                 tier.highlight
-                  ? "border-primary bg-white/5"
-                  : "border-white/10 bg-transparent"
+                  ? "border-primary bg-muted"
+                  : "border-border bg-transparent"
               } flex flex-col rounded-lg justify-between transition-all hover:border-primary`}
             >
               <div>
@@ -77,11 +77,11 @@ export const Membership = () => {
                 </h4>
                 <div className="flex items-baseline gap-1 mb-6">
                   <span className="text-2xl font-light">{tier.price}</span>
-                  <span className="text-xs text-white/40 uppercase tracking-widest">
+                  <span className="text-xs text-muted-foreground uppercase tracking-widest">
                     {tier.period}
                   </span>
                 </div>
-                <p className="text-sm text-white/50 mb-8 font-light italic leading-relaxed">
+                <p className="text-sm text-foreground/50 mb-8 font-light italic leading-relaxed">
                   "{tier.description}"
                 </p>
 
@@ -91,7 +91,7 @@ export const Membership = () => {
                       key={fIndex}
                       className="flex items-center gap-3 text-xs uppercase tracking-widest"
                     >
-                      <IconCheck size={14} className="text-white/40" />
+                      <IconCheck size={14} className="text-muted-foreground" />
                       {feature}
                     </li>
                   ))}
