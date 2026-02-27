@@ -2,10 +2,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  IconCheck,
-  IconChevronRight,
-  IconChevronLeft,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
   IconPlus,
   IconTrash,
   IconLoader2,
@@ -23,15 +32,19 @@ import {
   type EventCategory,
   type AdminEventWithStats,
 } from "@/lib/events-api";
+import { PageHeader } from "@/components/PageHeader";
+import { DateSelector } from "@/components/DateSelector";
+import { Loader } from "@/components/Loader";
 
 interface TierForm {
+  id?: string; // undefined for newly-added tiers
   name: string;
   description: string;
   priceNaira: string;
   quantity: string;
 }
 
-interface FormData {
+interface FormState {
   title: string;
   description: string;
   category: EventCategory;
@@ -54,13 +67,11 @@ const EditEventPage = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [error, setError] = useState(false);
-  const [form, setForm] = useState<FormData | null>(null);
+  const [fetchError, setFetchError] = useState(false);
+  const [form, setForm] = useState<FormState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // File pending upload
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  // Blob URL for local preview
   const [previewUrl, setPreviewUrl] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,6 +93,7 @@ const EditEventPage = () => {
           dressCode: event.dressCode ?? "",
           isMemberOnly: event.isMemberOnly,
           tiers: event.ticketTiers.map((t) => ({
+            id: t.id,
             name: t.name,
             description: t.description ?? "",
             priceNaira: String(t.price / 100),
@@ -89,29 +101,29 @@ const EditEventPage = () => {
           })),
         });
       })
-      .catch(() => setError(true))
+      .catch(() => setFetchError(true))
       .finally(() => setFetching(false));
   }, [id]);
 
   if (fetching) {
     return (
-      <div className="flex items-center justify-center min-h-64 gap-3 text-white/40">
+      <div className="flex items-center justify-center min-h-64 gap-3 text-muted-foreground">
         <IconLoader2 size={20} className="animate-spin" />
         <span className="text-xs uppercase tracking-widest">Loading…</span>
       </div>
     );
   }
 
-  if (error || !form) {
+  if (fetchError || !form) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-64 gap-4 text-white/20">
+      <div className="flex flex-col items-center justify-center min-h-64 gap-4 text-muted-foreground">
         <IconAlertCircle size={32} stroke={1} />
         <p className="text-xs uppercase tracking-widest">Event not found</p>
       </div>
     );
   }
 
-  const set = (field: keyof FormData, value: any) =>
+  const set = (field: keyof FormState, value: any) =>
     setForm((f) => (f ? { ...f, [field]: value } : f));
 
   const setTier = (i: number, field: keyof TierForm, value: string) =>
@@ -162,31 +174,10 @@ const EditEventPage = () => {
     set("coverImage", "");
   };
 
-  const canProceed = () => {
-    if (!form) return false;
-    if (step === 1) return form.title.trim().length >= 3;
-    if (step === 2) return !!(form.date && form.doorsOpen && form.venueName);
-    if (step === 3)
-      return (
-        form.tiers.length > 0 &&
-        form.tiers.every(
-          (t) =>
-            t.name &&
-            t.priceNaira &&
-            !isNaN(Number(t.priceNaira)) &&
-            t.quantity &&
-            !isNaN(Number(t.quantity)) &&
-            Number(t.quantity) > 0,
-        )
-      );
-    return true;
-  };
-
   const handleSave = async () => {
     if (!form) return;
     setLoading(true);
     try {
-      // Upload new cover image if one was selected
       let coverImageUrl = form.coverImage || undefined;
       if (coverFile) {
         toast.loading("Uploading cover image…", { id: "cover-upload" });
@@ -214,6 +205,7 @@ const EditEventPage = () => {
         dressCode: form.dressCode || undefined,
         isMemberOnly: form.isMemberOnly,
         ticketTiers: form.tiers.map((t) => ({
+          id: t.id,
           name: t.name,
           description: t.description || undefined,
           price: toKobo(Number(t.priceNaira)),
@@ -229,88 +221,57 @@ const EditEventPage = () => {
     }
   };
 
-  // The image to show in preview: blob URL (new file) > saved Cloudflare URL
   const imageSource = previewUrl || form.coverImage;
 
   return (
-    <main className="bg-neutral-950 min-h-screen text-white">
-      <div className="mb-12">
-        <h1 className="text-3xl font-bold uppercase tracking-tighter mb-2">
-          Edit <span className="text-white/40 italic">Experience</span>
-        </h1>
-        <p className="text-[10px] uppercase tracking-widest text-white/40 mb-6">
-          {STEP_LABELS[step - 1]}
-        </p>
-        <div className="flex items-center gap-4">
-          {[1, 2, 3, 4].map((s) => (
-            <div key={s} className="flex items-center gap-2">
-              <button
-                onClick={() => s < step && setStep(s)}
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all ${
-                  step >= s
-                    ? "bg-white text-black border-white"
-                    : "border-white/10 text-white/20"
-                } ${s < step ? "cursor-pointer" : "cursor-default"}`}
-              >
-                {step > s ? <IconCheck size={14} /> : s}
-              </button>
-              {s < 4 && (
-                <div
-                  className={`w-12 h-px ${step > s ? "bg-white" : "bg-white/10"}`}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+    <main>
+      <PageHeader back title="Edit Event" description={STEP_LABELS[step - 1]} />
 
-      <div className="bg-neutral-900 border border-white/5 p-8 md:p-12 mb-8">
+      <div className="space-y-6">
+        {/* ── STEP 1 ── */}
         {step === 1 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest text-white/40">
-                Experience Title *
-              </label>
-              <input
-                type="text"
+              <Label>Experience Title *</Label>
+              <Input
                 value={form.title}
                 onChange={(e) => set("title", e.target.value)}
-                className="w-full bg-black border border-white/10 p-4 text-sm focus:border-white/40 outline-none"
+                placeholder="e.g. Wizkid Live at Landmark"
               />
             </div>
+
             <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest text-white/40">
-                Description
-              </label>
-              <textarea
+              <Label>Description</Label>
+              <Textarea
                 value={form.description}
                 onChange={(e) => set("description", e.target.value)}
                 rows={4}
-                className="w-full bg-black border border-white/10 p-4 text-sm focus:border-white/40 outline-none resize-none"
+                placeholder="Describe the experience..."
               />
             </div>
+
             <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest text-white/40">
-                Category *
-              </label>
-              <select
+              <Label>The Vibe (Category) *</Label>
+              <Select
                 value={form.category}
-                onChange={(e) => set("category", e.target.value as EventCategory)}
-                className="w-full bg-black border border-white/10 p-4 text-sm outline-none uppercase tracking-widest text-white/60"
+                onValueChange={(v) => set("category", v as EventCategory)}
               >
-                {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>
+                      {v}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Cover Image — file upload with drag-and-drop */}
+            {/* Cover Image */}
             <div className="space-y-2">
-              <label className="text-[10px] uppercase tracking-widest text-white/40">
-                Cover Image
-              </label>
+              <Label>Cover Image</Label>
               {!imageSource ? (
                 <div
                   onDragOver={(e) => {
@@ -324,47 +285,48 @@ const EditEventPage = () => {
                     const file = e.dataTransfer.files?.[0];
                     if (file) handleFile(file);
                   }}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`border-2 border-dashed p-10 text-center cursor-pointer transition-all ${
+                  className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${
                     isDragging
-                      ? "border-white/60 bg-white/5"
-                      : "border-white/10 bg-black/30"
+                      ? "border-primary bg-primary/5"
+                      : "border-muted-foreground/20 bg-muted/30"
                   }`}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <IconPhoto size={36} className="text-white/30" />
-                    <p className="text-sm text-white/60">
+                    <IconPhoto size={40} className="text-muted-foreground" />
+                    <p className="text-sm font-medium">
                       Click to upload or drag and drop
                     </p>
-                    <p className="text-xs text-white/30">
+                    <p className="text-xs text-muted-foreground">
                       PNG, JPG or WEBP · Max 10 MB
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="relative group">
+                <div className="relative group rounded-lg overflow-hidden border">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imageSource}
                     alt="Cover preview"
-                    className="w-full aspect-video object-cover border border-white/10"
+                    className="w-full aspect-video object-cover"
                   />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-3 transition-opacity">
-                    <button
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-3 transition-opacity">
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() => fileInputRef.current?.click()}
-                      className="text-[10px] uppercase tracking-widest border border-white/30 px-4 py-2 hover:bg-white/10 transition-colors"
                     >
                       Replace
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="destructive"
+                      size="sm"
                       onClick={handleRemoveCover}
-                      className="text-[10px] uppercase tracking-widest border border-red-500/40 px-4 py-2 text-red-400 hover:bg-red-500/10 transition-colors"
                     >
-                      <IconX size={12} className="inline mr-1" />
-                      Remove
-                    </button>
+                      <IconX size={16} className="mr-1" /> Remove
+                    </Button>
                   </div>
                 </div>
               )}
@@ -378,61 +340,58 @@ const EditEventPage = () => {
                 }
               />
               {coverFile && (
-                <p className="text-[10px] text-white/30">
-                  {coverFile.name} ·{" "}
-                  {(coverFile.size / 1024 / 1024).toFixed(2)} MB · will upload on save
+                <p className="text-xs text-muted-foreground">
+                  {coverFile.name} · {(coverFile.size / 1024 / 1024).toFixed(2)}{" "}
+                  MB · will upload on save
                 </p>
               )}
             </div>
           </div>
         )}
 
+        {/* ── STEP 2 ── */}
         {step === 2 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[
-                { label: "Date *", key: "date", type: "date" },
-                {
-                  label: "Doors Open *",
-                  key: "doorsOpen",
-                  type: "text",
-                  placeholder: "19:00 WAT",
-                },
-                {
-                  label: "Venue Name *",
-                  key: "venueName",
-                  type: "text",
-                  placeholder: "Eko Hotel",
-                },
-                {
-                  label: "Venue Address",
-                  key: "venueAddress",
-                  type: "text",
-                  placeholder: "Full address",
-                },
-                {
-                  label: "City",
-                  key: "city",
-                  type: "text",
-                  placeholder: "Lagos",
-                },
-                {
-                  label: "Dress Code",
-                  key: "dressCode",
-                  type: "text",
-                  placeholder: "Black Tie",
-                },
-              ].map(({ label, key, type, placeholder }) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <DateSelector
+                  dateValue={form.date}
+                  onChange={(v) => set("date", v)}
+                />
+              </div>
+
+              {(
+                [
+                  {
+                    label: "Doors Open *",
+                    key: "doorsOpen",
+                    placeholder: "e.g. 19:00 WAT",
+                  },
+                  {
+                    label: "Venue Name *",
+                    key: "venueName",
+                    placeholder: "e.g. Eko Hotel Grand Ballroom",
+                  },
+                  {
+                    label: "Venue Address",
+                    key: "venueAddress",
+                    placeholder: "Full address",
+                  },
+                  { label: "City", key: "city", placeholder: "Lagos" },
+                  {
+                    label: "Dress Code",
+                    key: "dressCode",
+                    placeholder: "e.g. Black Tie / All White",
+                  },
+                ] as const
+              ).map(({ label, key, placeholder }) => (
                 <div key={key} className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-widest text-white/40">
-                    {label}
-                  </label>
-                  <input
-                    type={type}
-                    value={(form as any)[key]}
+                  <Label>{label}</Label>
+                  <Input
+                    value={form[key]}
                     placeholder={placeholder}
-                    onChange={(e) => set(key as keyof FormData, e.target.value)}
-                    className="w-full bg-black border border-white/10 p-4 text-sm text-white/80 outline-none"
+                    onChange={(e) => set(key, e.target.value)}
                   />
                 </div>
               ))}
@@ -440,177 +399,184 @@ const EditEventPage = () => {
           </div>
         )}
 
+        {/* ── STEP 3 ── */}
         {step === 3 && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+          <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="flex justify-between items-center">
-              <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold">
-                Ticket Tiers *
-              </h4>
+              <Label>Ticket Tiers</Label>
               <Button
+                type="button"
                 variant="outline"
+                size="sm"
                 onClick={addTier}
-                className="text-[9px] uppercase tracking-widest border-white/10 py-0 h-8 rounded-none"
               >
-                <IconPlus size={12} className="mr-1" /> Add Tier
+                <IconPlus /> Add Tier
               </Button>
             </div>
+
             <div className="space-y-4">
               {form.tiers.map((tier, i) => (
-                <div
-                  key={i}
-                  className="bg-black p-6 border border-white/5 grid grid-cols-1 md:grid-cols-4 gap-4 relative"
-                >
-                  {[
-                    { label: "Tier Name", key: "name", placeholder: "VIP Lounge" },
-                    {
-                      label: "Price (₦)",
-                      key: "priceNaira",
-                      placeholder: "50000",
-                      type: "number",
-                    },
-                    {
-                      label: "Quantity",
-                      key: "quantity",
-                      placeholder: "100",
-                      type: "number",
-                    },
-                    {
-                      label: "Description",
-                      key: "description",
-                      placeholder: "Optional",
-                    },
-                  ].map(({ label, key, placeholder, type }) => (
-                    <div key={key} className="space-y-1">
-                      <p className="text-[9px] text-white/40 uppercase">
-                        {label}
-                      </p>
-                      <input
-                        type={type ?? "text"}
-                        value={(tier as any)[key]}
-                        placeholder={placeholder}
-                        onChange={(e) =>
-                          setTier(i, key as keyof TierForm, e.target.value)
-                        }
-                        className="bg-transparent border-b border-white/10 w-full text-xs py-1 focus:border-white transition-all outline-none"
+                <Card key={i} className="relative">
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Tier Name</Label>
+                      <Input
+                        value={tier.name}
+                        placeholder="e.g. VIP Lounge"
+                        onChange={(e) => setTier(i, "name", e.target.value)}
                       />
                     </div>
-                  ))}
-                  {form.tiers.length > 1 && (
-                    <button
-                      onClick={() => removeTier(i)}
-                      className="absolute top-4 right-4 text-red-500/60 hover:text-red-500"
-                    >
-                      <IconTrash size={14} />
-                    </button>
-                  )}
-                </div>
+                    <div className="space-y-2">
+                      <Label>Price (₦)</Label>
+                      <Input
+                        type="number"
+                        value={tier.priceNaira}
+                        placeholder="50000"
+                        min="0"
+                        onChange={(e) =>
+                          setTier(i, "priceNaira", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Quantity</Label>
+                      <Input
+                        type="number"
+                        value={tier.quantity}
+                        placeholder="100"
+                        min="1"
+                        onChange={(e) => setTier(i, "quantity", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description</Label>
+                      <Input
+                        value={tier.description}
+                        placeholder="Optional"
+                        onChange={(e) =>
+                          setTier(i, "description", e.target.value)
+                        }
+                      />
+                    </div>
+
+                    {form.tiers.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeTier(i)}
+                        className="absolute top-4 right-4 text-red-500/60 hover:text-red-500 transition-colors"
+                      >
+                        <IconTrash size={14} />
+                      </button>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
         )}
 
+        {/* ── STEP 4 ── */}
         {step === 4 && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-              <div className="space-y-4">
-                {[
-                  { label: "Title", value: form.title },
-                  {
-                    label: "Category",
-                    value: CATEGORY_LABELS[form.category],
-                  },
-                  {
-                    label: "Date",
-                    value: form.date
-                      ? new Date(form.date).toLocaleDateString("en-NG", {
-                          weekday: "long",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
-                      : "—",
-                  },
-                  { label: "Venue", value: form.venueName },
-                ].map((d) => (
-                  <div key={d.label}>
-                    <p className="text-[9px] text-white/30 uppercase mb-1">
-                      {d.label}
-                    </p>
-                    <p className="font-bold uppercase">{d.value}</p>
-                  </div>
-                ))}
+            <Card>
+              <CardHeader className="border-b">
+                <CardTitle>Review Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                <div className="space-y-4">
+                  {[
+                    { label: "Title", value: form.title },
+                    {
+                      label: "Category",
+                      value: CATEGORY_LABELS[form.category],
+                    },
+                    {
+                      label: "Date",
+                      value: form.date
+                        ? new Date(form.date).toLocaleDateString("en-NG", {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                        : "—",
+                    },
+                    { label: "Venue", value: form.venueName },
+                  ].map((item) => (
+                    <div key={item.label}>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {item.label}
+                      </p>
+                      <p className="font-bold uppercase text-sm">
+                        {item.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  {imageSource && (
+                    <div className="mb-4">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imageSource}
+                        alt="Cover"
+                        className="w-full aspect-video object-cover rounded-md"
+                      />
+                    </div>
+                  )}
+                  <p className="text-xs font-medium uppercase mb-4">
+                    Ticket Tiers
+                  </p>
+                  {form.tiers.map((t, i) => (
+                    <div
+                      key={i}
+                      className="flex justify-between text-sm border-b last:border-0 pb-2"
+                    >
+                      <span className="text-muted-foreground">{t.name}</span>
+                      <span>
+                        ₦{Number(t.priceNaira || 0).toLocaleString()} ×{" "}
+                        {t.quantity}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="member-only"
+                  checked={form.isMemberOnly}
+                  onCheckedChange={(v) => set("isMemberOnly", Boolean(v))}
+                />
+                <Label htmlFor="member-only" className="cursor-pointer">
+                  Member-Only Access
+                </Label>
               </div>
-              <div>
-                {imageSource && (
-                  <div className="mb-4">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={imageSource}
-                      alt="Cover"
-                      className="w-full aspect-video object-cover border border-white/10"
-                    />
-                  </div>
-                )}
-                <p className="text-[9px] text-white/30 uppercase mb-3">
-                  Ticket Tiers
-                </p>
-                {form.tiers.map((t, i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between text-xs border-b border-white/5 pb-2 mb-2"
-                  >
-                    <span className="text-white/80">{t.name}</span>
-                    <span className="text-white/40">
-                      ₦{Number(t.priceNaira || 0).toLocaleString()} ×{" "}
-                      {t.quantity}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="flex items-center gap-3 pt-4 border-t border-white/5">
-              <input
-                type="checkbox"
-                className="accent-white"
-                checked={form.isMemberOnly}
-                onChange={(e) => set("isMemberOnly", e.target.checked)}
-                id="member-only"
-              />
-              <label
-                htmlFor="member-only"
-                className="text-[10px] uppercase tracking-widest text-white/60 cursor-pointer"
-              >
-                Member-Only Access
-              </label>
             </div>
           </div>
         )}
       </div>
 
-      <div className="flex justify-between">
+      {/* ── Navigation ── */}
+      <div className="flex justify-between mt-8">
         <Button
+          type="button"
+          variant="secondary"
           onClick={() => setStep((s) => s - 1)}
           disabled={step === 1}
-          className="bg-transparent border border-white/10 text-white hover:bg-white/5 rounded-none px-8 py-6 uppercase tracking-widest text-[10px] disabled:opacity-0"
         >
-          <IconChevronLeft size={16} className="mr-2" /> Back
+          Back
         </Button>
+
         {step < 4 ? (
-          <Button
-            onClick={() => setStep((s) => s + 1)}
-            disabled={!canProceed()}
-            className="bg-white text-black hover:bg-neutral-200 rounded-none px-8 py-6 uppercase tracking-widest text-[10px] disabled:opacity-40"
-          >
-            Next <IconChevronRight size={16} className="ml-2" />
+          <Button type="button" onClick={() => setStep((s) => s + 1)}>
+            Next Phase
           </Button>
         ) : (
-          <Button
-            onClick={handleSave}
-            disabled={loading}
-            className="bg-white text-black hover:bg-neutral-200 rounded-none px-12 py-6 uppercase tracking-widest text-[10px] font-bold"
-          >
-            {loading && <IconLoader2 size={16} className="animate-spin mr-2" />}
-            Save Changes
+          <Button type="button" onClick={handleSave} disabled={loading}>
+            {loading ? <Loader text="Saving..." /> : "Save Changes"}
           </Button>
         )}
       </div>

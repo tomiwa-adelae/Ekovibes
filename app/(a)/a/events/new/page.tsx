@@ -42,6 +42,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { DateSelector } from "@/components/DateSelector";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader } from "@/components/Loader";
 
 // ── Zod Schemas per step ────────────────────────────────────────────────────
 
@@ -383,7 +384,9 @@ const CreateEventPage = () => {
                 />
                 {coverFile && (
                   <p className="text-xs text-muted-foreground">
-                    {coverFile.name} · {(coverFile.size / 1024 / 1024).toFixed(2)} MB · will upload on submit
+                    {coverFile.name} ·{" "}
+                    {(coverFile.size / 1024 / 1024).toFixed(2)} MB · will upload
+                    on submit
                   </p>
                 )}
               </div>
@@ -662,7 +665,7 @@ const CreateEventPage = () => {
                     {form.getValues("tiers").map((t, i) => (
                       <div
                         key={i}
-                        className="flex justify-between text-sm border-b pb-2"
+                        className="flex justify-between text-sm border-b last:border-0 pb-2"
                       >
                         <span className="text-muted-foreground">{t.name}</span>
                         <span>
@@ -729,10 +732,7 @@ const CreateEventPage = () => {
                 onClick={() => handleDeploy(false)}
                 disabled={loading}
               >
-                {loading ? (
-                  <IconLoader2 size={16} className="animate-spin mr-2" />
-                ) : null}
-                Live Deploy
+                {loading ? <Loader text="Deploying..." /> : "Live Deploy"}
               </Button>
             </div>
           )}

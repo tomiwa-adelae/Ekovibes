@@ -184,6 +184,7 @@ export interface CreateEventPayload {
   dressCode?: string;
   isMemberOnly?: boolean;
   ticketTiers: {
+    id?: string; // present when updating existing tiers
     name: string;
     description?: string;
     price: number; // kobo

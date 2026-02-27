@@ -20,6 +20,28 @@ import {
   type AdminEventWithStats,
   type EventStatus,
 } from "@/lib/events-api";
+import { PageHeader } from "@/components/PageHeader";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import Image from "next/image";
+import { DEFAULT_IMAGE } from "@/constants";
+import { Progress } from "@/components/ui/progress";
+import { formatDate, formatMoneyInput } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { NairaIcon } from "@/components/NairaIcon";
 
 const STATUS_STYLES: Record<EventStatus, string> = {
   LIVE: "bg-green-500/10 text-green-500",
@@ -58,7 +80,10 @@ const AdminEventDetailPage = () => {
         <IconAlertCircle size={32} stroke={1} />
         <p className="text-xs uppercase tracking-widest">Event not found</p>
         <Link href="/a/events">
-          <Button variant="outline" className="rounded-none border-border text-[10px] uppercase tracking-widest">
+          <Button
+            variant="outline"
+            className="rounded-none border-border text-[10px] uppercase tracking-widest"
+          >
             Back to Events
           </Button>
         </Link>
@@ -72,51 +97,53 @@ const AdminEventDetailPage = () => {
       : 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <Link href="/a/events" className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-[10px] uppercase tracking-widest mb-4 transition-colors">
-            <IconArrowLeft size={12} /> All Events
-          </Link>
-          <div className="flex items-center gap-4 mb-1">
-            <h1 className="text-2xl font-bold uppercase tracking-tighter">
+      <div className="flex flex-col lg:flex-row gap-2 items-start lg:items-center justify-start md:justify-between">
+        <PageHeader
+          title={
+            <>
               {event.title}
-            </h1>
-            <span className={`text-[9px] uppercase tracking-widest px-2 py-1 font-bold ${STATUS_STYLES[event.status]}`}>
-              {event.status.replace("_", " ")}
-            </span>
-          </div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            {event.category.replace("_", " ")} • {event.venueName}
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Link href={`/a/events/${id}/scan`}>
-            <Button variant="outline" className="border-border text-muted-foreground hover:text-foreground rounded-none px-5 py-5 text-[10px] uppercase tracking-widest">
+              <Badge variant="secondary">
+                {event.status.replace("_", " ")}
+              </Badge>
+            </>
+          }
+          back
+          description={
+            <>
+              {event.category.replace("_", " ")} • {event.venueName}
+            </>
+          }
+        />
+        <div className="flex w-full lg:w-auto gap-3">
+          <Button className="flex-1" asChild variant="outline">
+            <Link href={`/a/events/${id}/scan`}>
               <IconQrcode size={16} className="mr-2" /> Scanner
-            </Button>
-          </Link>
-          <Link href={`/a/events/${id}/edit`}>
-            <Button className="bg-foreground text-background hover:bg-foreground/90 rounded-none px-5 py-5 text-[10px] uppercase tracking-widest font-bold">
+            </Link>
+          </Button>
+          <Button className="flex-1" asChild>
+            <Link href={`/a/events/${id}/edit`}>
               <IconEdit size={16} className="mr-2" /> Edit Event
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 2xl:grid-cols-4 gap-2">
         {[
           {
             label: "Total Revenue",
             value: formatNaira(event.totalRevenue),
-            icon: <IconCurrencyNaira size={18} />,
+            icon: (
+              <IconCurrencyNaira size={18} className="text-muted-foreground" />
+            ),
           },
           {
             label: "Tickets Sold",
             value: `${event.totalSold} / ${event.totalCapacity}`,
-            icon: <IconTicket size={18} />,
+            icon: <IconTicket size={18} className="text-muted-foreground" />,
           },
           {
             label: "Sell-Through",
@@ -125,142 +152,164 @@ const AdminEventDetailPage = () => {
           },
           {
             label: "Date",
-            value: new Date(event.date).toLocaleDateString("en-NG", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }),
-            icon: <IconCalendar size={18} />,
+            value: formatDate(event.date),
+            icon: <IconCalendar size={18} className="text-muted-foreground" />,
           },
         ].map((s, i) => (
-          <div
-            key={i}
-            className="bg-card border border-border p-6"
-          >
-            <div className="flex justify-between items-start mb-3">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                {s.label}
-              </p>
-              {s.icon && <span className="text-white/20">{s.icon}</span>}
-            </div>
-            <p className="text-xl font-bold tracking-tight">{s.value}</p>
-          </div>
+          <Card key={i}>
+            <CardContent className="p-4 pt-6">
+              {" "}
+              {/* Added padding for Shadcn cards */}
+              <div className="flex justify-between items-start mb-3">
+                <CardDescription className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">
+                  {s.label}
+                </CardDescription>
+                {/* Render the icon directly since it is already JSX */}
+                {s.icon}
+              </div>
+              <CardTitle className="text-xl font-bold tracking-tight">
+                {s.value}
+              </CardTitle>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
       {/* Event Info */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cover Image */}
-        {event.coverImage && (
-          <div className="aspect-video overflow-hidden border border-border">
-            <img
-              src={event.coverImage}
-              alt={event.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-
+      <div>
         {/* Details */}
-        <div className={`bg-card border border-border p-6 space-y-4 ${event.coverImage ? "lg:col-span-2" : "lg:col-span-3"}`}>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-4">
-            Event Details
-          </p>
-          {[
-            { label: "Doors Open", value: event.doorsOpen },
-            { label: "Venue", value: `${event.venueName}${event.venueAddress ? ` — ${event.venueAddress}` : ""}` },
-            { label: "City", value: event.city || "—" },
-            { label: "Dress Code", value: event.dressCode || "—" },
-            { label: "Access", value: event.isMemberOnly ? "Members Only" : "Public" },
-          ].map((d) => (
-            <div key={d.label} className="flex justify-between border-b border-border pb-3">
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{d.label}</span>
-              <span className="text-xs text-foreground/80 text-right max-w-[60%]">{d.value}</span>
+        <Card className="p-0 overflow-hidden">
+          <CardHeader className="p-0">
+            <div className="aspect-video overflow-hidden border border-border">
+              <Image
+                src={event.coverImage || DEFAULT_IMAGE}
+                width={1000}
+                height={1000}
+                alt={event.title}
+                className="w-full h-full object-cover"
+              />
             </div>
-          ))}
-          {event.description && (
-            <p className="text-sm text-foreground/50 leading-relaxed pt-2">
-              {event.description}
-            </p>
-          )}
-        </div>
+          </CardHeader>
+          <CardContent className="pb-4">
+            {[
+              { label: "Doors Open", value: event.doorsOpen },
+              {
+                label: "Venue",
+                value: `${event.venueName}${event.venueAddress ? ` — ${event.venueAddress}` : ""}`,
+              },
+              { label: "City", value: event.city || "—" },
+              { label: "Dress Code", value: event.dressCode || "—" },
+              {
+                label: "Access",
+                value: event.isMemberOnly ? "Members Only" : "Public",
+              },
+            ].map((d) => (
+              <div
+                key={d.label}
+                className="flex justify-between border-b border-border py-3"
+              >
+                <span className="text-xs text-muted-foreground">{d.label}</span>
+                <span className="text-xs text-foreground/80 text-right max-w-[60%]">
+                  {d.value}
+                </span>
+              </div>
+            ))}
+            {event.description && (
+              <p className="text-sm text-foreground/50 leading-relaxed pt-2">
+                {event.description}
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Ticket Tiers */}
-      <div className="bg-card border border-border p-8">
-        <h3 className="text-xs font-bold uppercase tracking-widest mb-6">
-          Ticket Tiers
-        </h3>
-        <div className="space-y-4">
+      <Card>
+        <CardHeader className="border-b">
+          <CardTitle>Ticket Tiers</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           {event.ticketTiers.map((tier) => {
-            const pct = tier.quantity > 0 ? Math.round((tier.sold / tier.quantity) * 100) : 0;
+            const pct =
+              tier.quantity > 0
+                ? Math.round((tier.sold / tier.quantity) * 100)
+                : 0;
             return (
-              <div key={tier.id} className="flex items-center gap-6 border-b border-border pb-4">
+              <div
+                key={tier.id}
+                className="flex items-center gap-6 border-b last:border-0 border-border pb-4"
+              >
                 <div className="flex-1">
                   <div className="flex justify-between mb-2">
                     <p className="text-xs font-bold uppercase">{tier.name}</p>
-                    <p className="text-xs text-foreground/60">{formatNaira(tier.price)}</p>
+                    <p className="text-xs text-foreground/60">
+                      {formatNaira(tier.price)}
+                    </p>
                   </div>
-                  <div className="flex justify-between text-[9px] uppercase mb-1 text-muted-foreground">
-                    <span>{tier.sold} sold / {tier.quantity} capacity</span>
+                  <div className="flex justify-between text-xs mb-1 text-muted-foreground">
+                    <span>
+                      {tier.sold} sold / {tier.quantity} capacity
+                    </span>
                     <span>{pct}%</span>
                   </div>
-                  <div className="h-px bg-muted w-full overflow-hidden">
-                    <div
-                      className="h-full bg-foreground transition-all duration-700"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
+                  <Progress className="h-1" value={pct} />
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-bold">{formatNaira(tier.sold * tier.price)}</p>
-                  <p className="text-[9px] text-muted-foreground uppercase">revenue</p>
+                  <p className="text-xs font-bold">
+                    {formatNaira(tier.sold * tier.price)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Revenue</p>
                 </div>
               </div>
             );
           })}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Recent Orders */}
       {(event as any).orders?.length > 0 && (
-        <div className="bg-card border border-border p-8">
-          <h3 className="text-xs font-bold uppercase tracking-widest mb-6">
-            Recent Orders
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-border">
-                  {["Buyer", "Tier", "Amount", "Date"].map((h) => (
-                    <th key={h} className="pb-4 text-[10px] uppercase tracking-widest text-muted-foreground font-medium pr-6">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
+        <Card className="gap-2">
+          <CardHeader className="border-b">
+            <CardTitle>Recent Orders</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Buyer</TableHead>
+                  <TableHead>Tier</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead className="text-right">Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {(event as any).orders.map((order: any) => (
-                  <tr key={order.id}>
-                    <td className="py-3 pr-6">
-                      <p className="text-xs font-bold">{order.user.firstName} {order.user.lastName}</p>
-                      <p className="text-[9px] text-muted-foreground">{order.user.email}</p>
-                    </td>
-                    <td className="py-3 pr-6 text-xs text-foreground/60">
+                  <TableRow key={order.id}>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-semibold">
+                          {order.user.firstName} {order.user.lastName}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {order.user.email}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       {order.items[0]?.ticketTier?.name ?? "—"}
-                    </td>
-                    <td className="py-3 pr-6 text-xs font-bold">
-                      {formatNaira(order.total)}
-                    </td>
-                    <td className="py-3 text-xs text-muted-foreground">
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell>
+                      <NairaIcon />
+                      {formatMoneyInput(order.total)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatDate(order.createdAt)}
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

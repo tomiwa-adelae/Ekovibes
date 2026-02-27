@@ -6,7 +6,7 @@ import { IconArrowLeft } from "@tabler/icons-react";
 import { Badge } from "./ui/badge";
 
 interface PageHeaderProps {
-  title: string;
+  title: string | any;
   description?: string | any;
   action?: ReactNode;
   back?: boolean;

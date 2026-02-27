@@ -168,11 +168,11 @@ const EventDetailsPage = () => {
   return (
     <main className="py-16">
       <div className="container">
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-4">
           {/* LEFT — The Vibe (65%) */}
           <div className="lg:w-[65%]">
             {/* Hero Image */}
-            <div className="aspect-video w-full overflow-hidden mb-6 border border-border">
+            <div className="aspect-video w-full rounded-md overflow-hidden mb-6 border border-border">
               <Image
                 width={1000}
                 height={1000}

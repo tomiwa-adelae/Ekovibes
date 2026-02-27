@@ -83,7 +83,7 @@ export const FeaturedEvents = () => {
                   key={event.id}
                   className="group relative flex flex-col h-full"
                 >
-                  <div className="relative aspect-4/5 overflow-hidden mb-6">
+                  <div className="relative aspect-4/5 rounded-md overflow-hidden mb-6">
                     <Image
                       width={1000}
                       height={1000}
