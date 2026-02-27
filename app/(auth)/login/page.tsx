@@ -59,9 +59,9 @@ export default function LoginPage() {
           "/auth/login",
           data,
         );
-        setUser(res.user);
-        toast.success(res.message || "Welcome back!");
-        router.push(res.user.isAdmin ? "/a/dashboard" : "/dashboard");
+        setUser(res?.user);
+        toast.success(res?.message || "Welcome back!");
+        router.push(res?.user?.isAdmin ? "/a/dashboard" : "/dashboard");
       } catch (e: any) {
         toast.error(e?.response?.data?.message ?? "Invalid credentials");
       }
