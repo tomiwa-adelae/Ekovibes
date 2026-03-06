@@ -19,18 +19,34 @@ export const Logo = ({
 }) => {
   return (
     <Link href="/" className={cn("flex items-center space-x-2")}>
-      <Image
-        src={
-          type === "green"
-            ? "/assets/images/logo-green.png"
-            : "/assets/images/logo.png"
-        }
-        alt="EKOVIBES"
-        width={1000}
-        height={1000}
-        className={cn(size, "w-auto object-contain")}
-        priority
-      />
+      <span className="dark:hidden">
+        <Image
+          src={
+            type === "green"
+              ? "/assets/images/logo-green.png"
+              : "/assets/images/logo.png"
+          }
+          alt="EKOVIBES"
+          width={1000}
+          height={1000}
+          className={cn(size, "w-auto object-contain")}
+          priority
+        />
+      </span>
+      <span className="hidden dark:block">
+        <Image
+          src={
+            type === "green"
+              ? "/assets/images/logo.png"
+              : "/assets/images/logo.png"
+          }
+          alt="EKOVIBES"
+          width={1000}
+          height={1000}
+          className={cn(size, "w-auto object-contain")}
+          priority
+        />
+      </span>
     </Link>
   );
 };

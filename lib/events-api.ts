@@ -124,6 +124,9 @@ export interface EventQuery {
   search?: string;
   category?: EventCategory;
   status?: EventStatus;
+  sortBy?: 'date_asc' | 'date_desc';
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   limit?: number;
 }
@@ -136,6 +139,9 @@ export function getPublicEvents(
   const params = new URLSearchParams();
   if (query.search) params.set('search', query.search);
   if (query.category) params.set('category', query.category);
+  if (query.sortBy) params.set('sortBy', query.sortBy);
+  if (query.dateFrom) params.set('dateFrom', query.dateFrom);
+  if (query.dateTo) params.set('dateTo', query.dateTo);
   if (query.page) params.set('page', String(query.page));
   if (query.limit) params.set('limit', String(query.limit));
   const qs = params.toString();
@@ -225,8 +231,7 @@ export function deleteEvent(id: string): Promise<void> {
 
 export function initiateOrder(dto: {
   eventId: string;
-  tierId: string;
-  quantity: number;
+  items: { tierId: string; quantity: number }[];
 }): Promise<InitiateOrderResponse> {
   return postData<InitiateOrderResponse>('/orders/initiate', dto);
 }
@@ -242,8 +247,36 @@ export function getMyTickets(): Promise<Ticket[]> {
   return fetchData<Ticket[]>('/orders/my-tickets');
 }
 
+export function getMyTicketByCode(code: string): Promise<Ticket> {
+  return fetchData<Ticket>(`/orders/my-tickets/${code}`);
+}
+
 export function scanTicket(code: string): Promise<ScanResult> {
   return postData<ScanResult>('/a/tickets/scan', { code });
+}
+
+export interface AdminOrder {
+  id: string;
+  reference: string;
+  status: string;
+  total: number;
+  createdAt: string;
+  user: { firstName: string; lastName: string; email: string };
+  event: { title: string; date: string };
+  items: { ticketTier: { name: string }; quantity: number }[];
+}
+
+export function getAdminOrders(query: {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+} = {}): Promise<PaginatedResponse<AdminOrder>> {
+  const params = new URLSearchParams();
+  if (query.page) params.set('page', String(query.page));
+  if (query.limit) params.set('limit', String(query.limit));
+  if (query.eventId) params.set('eventId', query.eventId);
+  const qs = params.toString();
+  return fetchData<PaginatedResponse<AdminOrder>>(`/a/orders${qs ? `?${qs}` : ''}`);
 }
 
 // ─── Utility ───────────────────────────────────────────────────────────────────
@@ -261,6 +294,37 @@ export function formatNaira(kobo: number): string {
 /** Convert naira to kobo for API calls */
 export function toKobo(naira: number): number {
   return Math.round(naira * 100);
+}
+
+// ─── Membership Applications ───────────────────────────────────────────────────
+
+export type MembershipTier = 'GOLD' | 'BLACK';
+
+export interface MembershipApplicationPayload {
+  fullName: string;
+  email: string;
+  phone: string;
+  occupation: string;
+  city: string;
+  tier: MembershipTier;
+  referral?: string;
+  message?: string;
+}
+
+export async function submitMembershipApplication(
+  dto: MembershipApplicationPayload,
+): Promise<{ message: string }> {
+  const { env } = await import('./env');
+  const res = await fetch(`${env.NEXT_PUBLIC_BACKEND_URL}/membership/apply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw err;
+  }
+  return res.json();
 }
 
 export const CATEGORY_LABELS: Record<EventCategory, string> = {

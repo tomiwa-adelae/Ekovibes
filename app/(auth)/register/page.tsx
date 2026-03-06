@@ -126,7 +126,11 @@ export default function RegisterPage() {
         );
         setUser(res.user);
         toast.success("Welcome to Ekovibes!");
-        router.push("/onboarding");
+        if (data.tier === "gold") {
+          router.push("/membership?tier=gold");
+        } else {
+          router.push("/onboarding");
+        }
       } catch (e: any) {
         toast.error(e?.response?.data?.message ?? "Registration failed");
       }
@@ -135,7 +139,7 @@ export default function RegisterPage() {
 
   return (
     <Card className="border-none shadow-2xl overflow-hidden bg-white dark:bg-card">
-      <CardHeader className="flex flex-col items-center pt-4">
+      <CardHeader className="flex flex-col items-center text-center pt-4">
         <Link
           href="/"
           className="flex items-center hover:text-primary text-slate-900 mb-1.5"
@@ -189,6 +193,9 @@ export default function RegisterPage() {
                         <IconCrown size={20} className="mb-2 text-yellow-500" />
                         <CardTitle>Gold</CardTitle>
                         <CardDescription>Priority Member</CardDescription>
+                        <p className="text-[9px] uppercase tracking-widest text-yellow-500/80 mt-1">
+                          Requires approval
+                        </p>
                       </CardContent>
                     </Card>
                   </div>

@@ -14,19 +14,19 @@ import {
 } from "@tabler/icons-react";
 
 export const homeNavLinks = [
-  { label: "The Black Book", slug: "/reservations" }, // Clubs, Restaurants
+  { label: "The Black Book", slug: "/reservations", comingSoon: true }, // Clubs, Restaurants
   { label: "Experiences", slug: "/ticketing" }, // Events, Concerts
-  { label: "The Vault", slug: "/shop" }, // E-commerce/Merch
-  { label: "Vibe Report", slug: "/media" }, // Blog/Video content
-  { label: "Concierge", slug: "/concierge" }, // High-end services
+  { label: "The Vault", slug: "/shop", comingSoon: true }, // E-commerce/Merch
+  { label: "Vibe Report", slug: "/media", comingSoon: true }, // Blog/Video content
+  { label: "Concierge", slug: "/concierge", comingSoon: true }, // High-end services
 ];
 
 export const homeNavLinksMobile = [
-  { label: "The Black Book", slug: "/reservations" }, // Clubs, Restaurants
+  { label: "The Black Book", slug: "/reservations", comingSoon: true }, // Clubs, Restaurants
   { label: "Experiences", slug: "/ticketing" }, // Events, Concerts
-  { label: "The Vault", slug: "/shop" }, // E-commerce/Merch
-  { label: "Vibe Report", slug: "/media" }, // Blog/Video content
-  { label: "Concierge", slug: "/concierge" }, // High-end services
+  { label: "The Vault", slug: "/shop", comingSoon: true }, // E-commerce/Merch
+  { label: "Vibe Report", slug: "/media", comingSoon: true }, // Blog/Video content
+  { label: "Concierge", slug: "/concierge", comingSoon: true }, // High-end services
 ];
 
 export const adminNavLinks = [
@@ -45,12 +45,8 @@ export const adminNavLinks = [
 
   // Experiences (Ticketing)
   { label: "Events", slug: "/a/events", icon: IconTicket },
-  {
-    label: "Scanner Mode",
-    slug: "/a/scan",
-    icon: IconQrcode,
-    comingSoon: true,
-  }, // For door staff
+  { label: "Ticket Orders", slug: "/a/orders", icon: IconCalendar },
+  { label: "Scanner Mode", slug: "/a/scan", icon: IconQrcode }, // For door staff
 
   // The Vault (Shop)
   {
@@ -87,5 +83,5 @@ export const memberNavLinks = [
   { label: "My Tables", slug: "/reservations", comingSoon: true }, // Pending/Confirmed Bookings
   { label: "Orders", slug: "/orders", comingSoon: true }, // Vault purchases
   { label: "Vibe Perks", slug: "/perks", comingSoon: true }, // Member-only discounts
-  { label: "Security", slug: "/security", comingSoon: true }, // Password/2FA
+  // { label: "Security", slug: "/security", comingSoon: true }, // Password/2FA
 ];

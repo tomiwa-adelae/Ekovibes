@@ -51,7 +51,7 @@ export function NavUser() {
                   alt={`${user?.firstName}'s picture` || ""}
                   className="object-cover size-full"
                 />
-                <AvatarFallback>Nuvylux</AvatarFallback>
+                <AvatarFallback>Ekovibe</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">
@@ -78,7 +78,7 @@ export function NavUser() {
                     alt={`${user?.firstName}'s picture` || ""}
                     className="object-cover size-full"
                   />
-                  <AvatarFallback>Nuvylux</AvatarFallback>
+                  <AvatarFallback>Ekovibe</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.firstName}</span>

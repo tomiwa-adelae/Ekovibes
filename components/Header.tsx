@@ -8,7 +8,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { MobileNavbar } from "./MobileNavbar";
 import { homeNavLinks } from "@/constants/nav-links";
 import { UserDropdown } from "./UserDropdown";
-import { IconShoppingCart } from "@tabler/icons-react";
+import { IconLock, IconShoppingCart } from "@tabler/icons-react";
 import { useAuth } from "@/store/useAuth";
 
 export const Header = () => {
@@ -28,29 +28,38 @@ export const Header = () => {
         </Link>
 
         <nav className="hidden lg:flex items-center text-white gap-1 font-medium text-muted-foreground text-sm">
-          {homeNavLinks.map(({ slug, label }, index) => (
-            <Button
-              size={"sm"}
-              key={index}
-              asChild
-              className={isActive(slug) ? "text-primary" : ""}
-              variant={isActive(slug) ? "secondary" : "ghost"}
-            >
-              <Link
-                href={slug}
-                className="hover:text-primary transition-colors"
+          {homeNavLinks.map(({ slug, label, comingSoon }, index) => {
+            return comingSoon ? (
+              <Button
+                size={"sm"}
+                key={index}
+                disabled
+                variant={isActive(slug) ? "secondary" : "ghost"}
               >
                 {label}
-              </Link>
-            </Button>
-          ))}
+                <IconLock />
+              </Button>
+            ) : (
+              <Button
+                size={"sm"}
+                key={index}
+                asChild
+                className={isActive(slug) ? "text-primary" : ""}
+                variant={isActive(slug) ? "secondary" : "ghost"}
+              >
+                <Link href={slug} className="dark:text-white">
+                  {label}
+                </Link>
+              </Button>
+            );
+          })}
         </nav>
 
         <div className="flex items-center space-x-1">
           <div className="hidden md:block">
             <ThemeToggle />
           </div>
-          <Button
+          {/* <Button
             variant="ghost"
             size="icon"
             asChild
@@ -62,7 +71,7 @@ export const Header = () => {
                 0
               </span>
             </Link>
-          </Button>
+          </Button> */}
           {_hasHydrated && user ? (
             <UserDropdown />
           ) : (

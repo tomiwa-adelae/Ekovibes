@@ -161,62 +161,67 @@ const MyAccessPage = () => {
                   {open && (
                     <div className="border-t border-border p-6 space-y-6 animate-in fade-in duration-200">
                       {group.tickets.map((ticket, i) => (
-                        <Card
+                        <Link
                           key={ticket.id}
-                          className={`${ticket.isUsed ? "opacity-50" : ""} p-0 py-2`}
+                          href={`/tickets/${ticket.code}`}
+                          className="block"
                         >
-                          <CardContent className="flex flex-col sm:flex-row gap-3 px-2 items-center">
-                            {/* QR */}
-                            <div
-                              className={`bg-white p-3 shrink-0 ${ticket.isUsed ? "grayscale opacity-50" : ""}`}
-                            >
-                              <QRCodeSVG
-                                value={ticket.code}
-                                size={120}
-                                level="H"
-                                bgColor="#ffffff"
-                                fgColor="#000000"
-                              />
-                            </div>
-
-                            {/* Info */}
-                            <div className="space-y-3 text-center sm:text-left grow">
-                              <div className="flex items-center gap-2 justify-center sm:justify-start">
-                                <p className="text-sm font-bold uppercase">
-                                  {ticket.orderItem.ticketTier.name}
-                                </p>
-                                <span
-                                  className={`text-[9px] uppercase tracking-widest px-2 py-0.5 font-bold flex items-center gap-1 ${
-                                    ticket.isUsed
-                                      ? "bg-red-500/10 text-red-500"
-                                      : "bg-green-500/10 text-green-500"
-                                  }`}
-                                >
-                                  {ticket.isUsed ? (
-                                    <>
-                                      <IconX size={10} /> Used
-                                    </>
-                                  ) : (
-                                    <>
-                                      <IconCheck size={10} /> Active
-                                    </>
-                                  )}
-                                </span>
+                          <Card
+                            className={`${ticket.isUsed ? "opacity-50" : ""} p-0 py-2 hover:border-foreground/20 transition-colors`}
+                          >
+                            <CardContent className="flex flex-col sm:flex-row gap-3 px-2 items-center">
+                              {/* QR */}
+                              <div
+                                className={`bg-white p-3 shrink-0 ${ticket.isUsed ? "grayscale opacity-50" : ""}`}
+                              >
+                                <QRCodeSVG
+                                  value={ticket.code}
+                                  size={120}
+                                  level="H"
+                                  bgColor="#ffffff"
+                                  fgColor="#000000"
+                                />
                               </div>
-                              <p className="text-xs text-muted-foreground break-all">
-                                {ticket.code}
-                              </p>
-                              {ticket.isUsed && ticket.usedAt && (
-                                <p className="text-[9px] text-muted-foreground uppercase">
-                                  Scanned {formatDate(ticket.usedAt)}
+
+                              {/* Info */}
+                              <div className="space-y-3 text-center sm:text-left grow">
+                                <div className="flex items-center gap-2 justify-center sm:justify-start">
+                                  <p className="text-sm font-bold uppercase">
+                                    {ticket.orderItem.ticketTier.name}
+                                  </p>
+                                  <span
+                                    className={`text-[9px] uppercase tracking-widest px-2 py-0.5 font-bold flex items-center gap-1 ${
+                                      ticket.isUsed
+                                        ? "bg-red-500/10 text-red-500"
+                                        : "bg-green-500/10 text-green-500"
+                                    }`}
+                                  >
+                                    {ticket.isUsed ? (
+                                      <>
+                                        <IconX size={10} /> Used
+                                      </>
+                                    ) : (
+                                      <>
+                                        <IconCheck size={10} /> Active
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+                                <p className="font-mono text-xs text-muted-foreground">
+                                  {ticket.code}
                                 </p>
-                              )}
-                              <p className="text-[9px] text-muted-foreground/50 uppercase">
-                                Ticket {i + 1} of {group.tickets.length}
-                              </p>
-                            </div>
-                          </CardContent>
-                        </Card>
+                                {ticket.isUsed && ticket.usedAt && (
+                                  <p className="text-[9px] text-muted-foreground uppercase">
+                                    Scanned {formatDate(ticket.usedAt)}
+                                  </p>
+                                )}
+                                <p className="text-[9px] text-muted-foreground/50 uppercase">
+                                  Ticket {i + 1} of {group.tickets.length} — Tap to view details
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
                       ))}
                     </div>
                   )}

@@ -1,9 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
 import {
-  IconArrowLeft,
   IconCamera,
   IconCheck,
   IconX,
@@ -26,8 +23,7 @@ import { formatDate } from "@/lib/utils";
 
 type ScanState = "idle" | "scanning" | "success" | "error" | "used";
 
-const QRScannerPage = () => {
-  const { id } = useParams<{ id: string }>();
+const ScannerPage = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -40,6 +36,7 @@ const QRScannerPage = () => {
   const [showManual, setShowManual] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [cameraError, setCameraError] = useState("");
+  const [scanCount, setScanCount] = useState(0);
 
   const stopCamera = useCallback(() => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -55,9 +52,10 @@ const QRScannerPage = () => {
       if (processing) return;
       setProcessing(true);
       try {
-        const res = await scanTicket(code);
+        const res = await scanTicket(code.trim().toUpperCase());
         setResult(res);
         setScanState(res.valid ? "success" : "used");
+        if (res.valid) setScanCount((n) => n + 1);
         stopCamera();
       } catch {
         setScanState("error");
@@ -84,7 +82,7 @@ const QRScannerPage = () => {
         setCameraActive(true);
       }
     } catch {
-      setCameraError("Camera access denied. Use manual entry instead.");
+      setCameraError("Camera access denied. Use manual entry below.");
       setScanState("idle");
       setShowManual(true);
     }
@@ -135,70 +133,105 @@ const QRScannerPage = () => {
     setManualCode("");
   };
 
+  const scanAgainWithCamera = () => {
+    reset();
+    startCamera();
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
-        back
-        title="QR Scanner"
-        description={"Scan tickets at the door"}
+        title="Scanner Mode"
+        description="Scan tickets at the door — any event"
       />
+
+      {/* Session counter */}
+      {scanCount > 0 && (
+        <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500/20 text-green-500 font-bold text-[10px]">
+            {scanCount}
+          </span>
+          ticket{scanCount !== 1 ? "s" : ""} admitted this session
+        </div>
+      )}
 
       {/* Result: Success */}
       {scanState === "success" && result && (
         <Card className="bg-green-500/10 border border-green-500/30 text-center">
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
               <IconCheck size={32} className="text-green-500" />
             </div>
-            <p className="text-sm uppercase text-green-500">Valid Ticket</p>
-            <h2 className="text-xl font-bold uppercase tracking-tighter">
-              {result.holder}
-            </h2>
-            <p className="text-lg">{result.tier}</p>
-            <p className="text-sm uppercase">{result.event}</p>
-            <Button onClick={reset} className="mt-4">
-              Scan Next
-            </Button>
+            <p className="text-xs uppercase tracking-widest text-green-500">
+              Valid — Admit
+            </p>
+            <h2 className="text-2xl font-bold uppercase">{result.holder}</h2>
+            <p className="text-sm font-medium uppercase">{result.tier}</p>
+            <p className="text-xs text-muted-foreground uppercase">
+              {result.event}
+            </p>
+            <div className="flex gap-3 pt-2">
+              <Button onClick={scanAgainWithCamera} className="flex-1">
+                <IconCamera size={14} className="mr-2" /> Scan Next
+              </Button>
+              <Button onClick={reset} variant="outline" className="flex-1">
+                <IconKeyboard size={14} className="mr-2" /> Manual
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
 
       {/* Result: Already Used */}
       {scanState === "used" && result && (
-        <Card className="bg-red-500/10 text-center">
-          <CardContent className="space-y-4">
+        <Card className="bg-red-500/10 border border-red-500/30 text-center">
+          <CardContent className="space-y-4 pt-6">
             <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto">
               <IconX size={32} className="text-red-500" />
             </div>
-            <p className="text-xs uppercase text-red-500">Already Used</p>
-            <h2 className="text-xl font-bold uppercase tracking-tighter">
-              {result.holder}
-            </h2>
-            <p className="lg">{result.tier}</p>
+            <p className="text-xs uppercase tracking-widest text-red-500">
+              Already Used — Deny
+            </p>
+            <h2 className="text-2xl font-bold uppercase">{result.holder}</h2>
+            <p className="text-sm font-medium uppercase">{result.tier}</p>
             {result.usedAt && (
-              <p className="text-xs uppercase">
-                Used at {formatDate(result.usedAt)}
+              <p className="text-xs text-muted-foreground uppercase">
+                Scanned {formatDate(result.usedAt)}
               </p>
             )}
-            <Button onClick={reset} className="mt-4">
-              Scan Next
-            </Button>
+            <div className="flex gap-3 pt-2">
+              <Button onClick={scanAgainWithCamera} className="flex-1">
+                <IconCamera size={14} className="mr-2" /> Scan Next
+              </Button>
+              <Button onClick={reset} variant="outline" className="flex-1">
+                <IconKeyboard size={14} className="mr-2" /> Manual
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Result: Error */}
+      {/* Result: Error / Invalid */}
       {scanState === "error" && (
-        <Card className="bg-orange-500/10 border border-orange-500/30">
-          <CardContent className="text-center">
-            <div className="w-16 h-16 mb-6 rounded-full bg-orange-500/20 flex items-center justify-center mx-auto">
+        <Card className="bg-orange-500/10 border border-orange-500/30 text-center">
+          <CardContent className="space-y-4 pt-6">
+            <div className="w-16 h-16 mb-2 rounded-full bg-orange-500/20 flex items-center justify-center mx-auto">
               <IconX size={32} className="text-orange-500" />
             </div>
-            <CardTitle className="text-orange-500">Invalid Ticket</CardTitle>
-            <CardDescription>This QR code is not recognized.</CardDescription>
-            <Button onClick={reset} className="mt-4">
-              Try Again
-            </Button>
+            <CardTitle className="text-orange-500 uppercase">
+              Invalid Ticket
+            </CardTitle>
+            <CardDescription>
+              This code is not recognised in our system.
+            </CardDescription>
+            <div className="flex gap-3 pt-2">
+              <Button onClick={scanAgainWithCamera} className="flex-1">
+                <IconCamera size={14} className="mr-2" /> Try Again
+              </Button>
+              <Button onClick={reset} variant="outline" className="flex-1">
+                <IconKeyboard size={14} className="mr-2" /> Manual
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -206,40 +239,47 @@ const QRScannerPage = () => {
       {/* Camera View */}
       {(scanState === "idle" || scanState === "scanning") && (
         <>
-          <Card className="relative">
-            <CardContent>
+          <Card className="relative py-0 overflow-hidden">
+            <CardContent className="p-0 aspect-square relative">
               <video
                 ref={videoRef}
-                className="w-full h-full object-cover rounded-md"
+                className="w-full h-full object-cover"
                 muted
                 playsInline
               />
               <canvas ref={canvasRef} className="hidden" />
 
               {!cameraActive && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
-                  <IconCamera size={48} stroke={1} />
-                  <p className="text-sm uppercase text-muted-foreground">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-muted/30">
+                  <IconCamera
+                    size={48}
+                    stroke={1}
+                    className="text-muted-foreground"
+                  />
+                  <p className="text-xs uppercase text-muted-foreground tracking-widest">
                     Camera inactive
                   </p>
                 </div>
               )}
 
-              {/* Scan overlay guides */}
+              {/* Corner guides */}
               {cameraActive && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-48 h-48 border-2 border-white/60 relative">
-                    <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-white" />
-                    <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-white" />
-                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-white" />
-                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-white" />
+                  <div className="w-56 h-56 relative">
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white" />
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white" />
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white" />
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="h-px w-full bg-white/30" />
+                    </div>
                   </div>
                 </div>
               )}
 
               {processing && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                  <IconLoader2 size={32} className="animate-spin text-white" />
+                  <IconLoader2 size={36} className="animate-spin text-white" />
                 </div>
               )}
             </CardContent>
@@ -261,8 +301,9 @@ const QRScannerPage = () => {
             )}
             <Button
               onClick={() => setShowManual((v) => !v)}
-              variant="outline"
+              variant={showManual ? "default" : "outline"}
               size="icon-lg"
+              title="Manual entry"
             >
               <IconKeyboard size={16} />
             </Button>
@@ -270,20 +311,26 @@ const QRScannerPage = () => {
 
           {showManual && (
             <Card>
-              <CardContent className="space-y-4">
-                <Label>Manual Code Entry</Label>
+              <CardContent className="space-y-4 pt-6">
+                <Label className="text-xs uppercase tracking-widest">
+                  Manual Code Entry
+                </Label>
                 <Input
                   type="text"
                   value={manualCode}
-                  onChange={(e) => setManualCode(e.target.value)}
+                  onChange={(e) => setManualCode(e.target.value.toUpperCase())}
                   onKeyDown={(e) =>
-                    e.key === "Enter" && manualCode && handleScan(manualCode)
+                    e.key === "Enter" &&
+                    manualCode.trim() &&
+                    handleScan(manualCode)
                   }
                   placeholder="e.g. LAPD-X7K3MN"
+                  className="font-mono uppercase"
+                  autoFocus
                 />
                 <Button
                   onClick={() => handleScan(manualCode)}
-                  disabled={!manualCode || processing}
+                  disabled={!manualCode.trim() || processing}
                   className="w-full"
                 >
                   {processing ? <Loader /> : "Verify Ticket"}
@@ -297,4 +344,4 @@ const QRScannerPage = () => {
   );
 };
 
-export default QRScannerPage;
+export default ScannerPage;

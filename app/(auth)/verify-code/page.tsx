@@ -20,6 +20,16 @@ import {
 } from "@/components/ui/input-otp";
 import { IconShieldLock, IconLoader2, IconRefresh } from "@tabler/icons-react";
 import { postData } from "@/lib/api";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import Link from "next/link";
+import { Logo } from "@/components/Logo";
+import { Loader } from "@/components/Loader";
 
 const schema = z.object({
   otp: z.string().length(6, "Enter all 6 digits"),
@@ -80,22 +90,22 @@ function VerifyCodeContent() {
     : "your email";
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-6">
-      <div className="w-full max-w-sm text-center">
-        {/* Icon & Title */}
-        <div className="mb-10">
-          <div className="w-16 h-16 bg-muted border border-border rounded-full flex items-center justify-center mx-auto mb-6">
-            <IconShieldLock size={30} className="text-foreground" stroke={1.5} />
-          </div>
-          <h1 className="text-3xl font-bold uppercase tracking-tighter text-foreground mb-3">
-            Verify <span className="text-foreground/40 italic">Identity</span>
-          </h1>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground leading-relaxed">
-            We sent a 6-digit access code to <br />
-            <span className="text-foreground">{maskedEmail}</span>
-          </p>
-        </div>
+    <Card className="border-none shadow-2xl overflow-hidden bg-white dark:bg-card">
+      <CardHeader className="flex flex-col items-center pt-4">
+        <Link
+          href="/"
+          className="flex items-center hover:text-primary text-slate-900 mb-1.5"
+        >
+          <Logo type="green" size="h-10" />
+        </Link>
+        <CardTitle>Verify Identity</CardTitle>
+        <CardDescription>
+          We sent a 6-digit access code to{" "}
+          <span className="text-foreground">{maskedEmail}</span>
+        </CardDescription>
+      </CardHeader>
 
+      <CardContent className="w-full text-center">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
@@ -106,41 +116,30 @@ function VerifyCodeContent() {
                   <FormControl>
                     <InputOTP
                       maxLength={6}
-                      containerClassName="justify-center gap-2"
+                      containerClassName="justify-center"
                       {...field}
                     >
                       <InputOTPGroup className="gap-2">
                         {Array.from({ length: 6 }).map((_, i) => (
-                          <InputOTPSlot
-                            key={i}
-                            index={i}
-                            className="w-12 h-16 text-2xl rounded-none border-border bg-card text-foreground data-[active=true]:border-foreground data-[active=true]:ring-0 first:rounded-none last:rounded-none"
-                          />
+                          <InputOTPSlot className="size-14" key={i} index={i} />
                         ))}
                       </InputOTPGroup>
                     </InputOTP>
                   </FormControl>
-                  <FormMessage className="text-[9px] text-red-400 uppercase tracking-widest" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-foreground text-background hover:bg-foreground/90 py-7 rounded-none font-bold uppercase tracking-[0.3em] text-[10px]"
-            >
-              {isSubmitting ? (
-                <IconLoader2 className="animate-spin mr-2" size={18} />
-              ) : null}
-              Verify & Continue
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? <Loader text="Verifying" /> : "Verify & Continue"}
             </Button>
           </form>
         </Form>
 
         {/* Resend */}
         <div className="space-y-4 mt-8">
-          <p className="text-[9px] uppercase tracking-widest text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Didn&apos;t receive the code?
           </p>
           {timer > 0 ? (
@@ -154,17 +153,13 @@ function VerifyCodeContent() {
               disabled={resending}
               className="text-[10px] text-foreground uppercase tracking-widest font-bold underline underline-offset-4 flex items-center gap-2 mx-auto disabled:opacity-40"
             >
-              {resending ? (
-                <IconLoader2 size={14} className="animate-spin" />
-              ) : (
-                <IconRefresh size={14} />
-              )}
+              {resending ? <Loader text="" /> : <IconRefresh size={14} />}
               Resend Code
             </button>
           )}
         </div>
-      </div>
-    </main>
+      </CardContent>
+    </Card>
   );
 }
 

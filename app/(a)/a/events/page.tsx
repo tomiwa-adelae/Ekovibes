@@ -442,7 +442,12 @@ const AdminEventsPage = () => {
 
       <Field>
         <InputGroup>
-          <InputGroupInput id="inline-start-input" placeholder="Search..." />
+          <InputGroupInput
+            id="inline-start-input"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
           <InputGroupAddon align="inline-start">
             <IconSearch className="text-muted-foreground" />
           </InputGroupAddon>

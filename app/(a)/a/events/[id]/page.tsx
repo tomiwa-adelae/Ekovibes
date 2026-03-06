@@ -12,6 +12,7 @@ import {
   IconTicket,
   IconCurrencyNaira,
   IconArrowLeft,
+  IconPencil,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -119,12 +120,12 @@ const AdminEventDetailPage = () => {
         <div className="flex w-full lg:w-auto gap-3">
           <Button className="flex-1" asChild variant="outline">
             <Link href={`/a/events/${id}/scan`}>
-              <IconQrcode size={16} className="mr-2" /> Scanner
+              <IconQrcode size={16} /> Scanner
             </Link>
           </Button>
           <Button className="flex-1" asChild>
             <Link href={`/a/events/${id}/edit`}>
-              <IconEdit size={16} className="mr-2" /> Edit Event
+              <IconPencil size={16} /> Edit Event
             </Link>
           </Button>
         </div>

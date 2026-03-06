@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { IconCheck, IconCrown, IconInfinity } from "@tabler/icons-react";
+import Link from "next/link";
 
 const tiers = [
   {
@@ -19,6 +20,7 @@ const tiers = [
       "Standard Airport Fast-Track (2x/year)",
     ],
     buttonText: "Apply for Gold",
+    href: "/membership?tier=gold",
     highlight: false,
   },
   {
@@ -36,6 +38,7 @@ const tiers = [
       "Bespoke Personal Shopping & Styling",
     ],
     buttonText: "Inquire for Black",
+    href: "/membership?tier=black",
     highlight: true,
   },
 ];
@@ -98,7 +101,9 @@ export const Membership = () => {
                 </ul>
               </div>
 
-              <Button className={`w-full `}>{tier.buttonText}</Button>
+              <Button className="w-full" asChild>
+                <Link href={tier.href}>{tier.buttonText}</Link>
+              </Button>
             </div>
           ))}
         </div>

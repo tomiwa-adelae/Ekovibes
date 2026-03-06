@@ -1,11 +1,21 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   IconFilter,
-  IconChevronDown,
   IconTicket,
   IconLoader2,
+  IconSearch,
+  IconX,
 } from "@tabler/icons-react";
 import Link from "next/link";
 import {
@@ -13,13 +23,17 @@ import {
   type Event,
   type EventCategory,
 } from "@/lib/events-api";
+import Image from "next/image";
+import { DEFAULT_IMAGE } from "@/constants";
 
-const TIMELINE_FILTERS = [
-  "Tonight",
-  "This Weekend",
-  "Next Week",
-  "All Dates",
-] as const;
+type TimelineKey = "tonight" | "weekend" | "next_week";
+
+const TIMELINE_FILTERS: { label: string; key: TimelineKey }[] = [
+  { label: "Tonight", key: "tonight" },
+  { label: "This Weekend", key: "weekend" },
+  { label: "Next Week", key: "next_week" },
+];
+
 const VIBE_FILTERS: { label: string; value: EventCategory }[] = [
   { label: "Concert / Music", value: "CONCERT" },
   { label: "Nightlife", value: "NIGHTLIFE" },
@@ -29,25 +43,63 @@ const VIBE_FILTERS: { label: string; value: EventCategory }[] = [
   { label: "Wellness", value: "WELLNESS" },
 ];
 
+function getTimelineDates(key: TimelineKey): { dateFrom: string; dateTo: string } {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (key === "tonight") {
+    const end = new Date(todayStart);
+    end.setHours(23, 59, 59, 999);
+    return { dateFrom: todayStart.toISOString(), dateTo: end.toISOString() };
+  }
+
+  if (key === "weekend") {
+    const day = now.getDay(); // 0=Sun, 6=Sat
+    const daysToFri = day <= 5 ? 5 - day : 6;
+    const fri = new Date(todayStart);
+    fri.setDate(todayStart.getDate() + daysToFri);
+    const sun = new Date(fri);
+    sun.setDate(fri.getDate() + 2);
+    sun.setHours(23, 59, 59, 999);
+    return { dateFrom: fri.toISOString(), dateTo: sun.toISOString() };
+  }
+
+  // next_week: Mon–Sun of next week
+  const day = now.getDay();
+  const daysToMon = day === 0 ? 1 : 8 - day;
+  const mon = new Date(todayStart);
+  mon.setDate(todayStart.getDate() + daysToMon);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  sun.setHours(23, 59, 59, 999);
+  return { dateFrom: mon.toISOString(), dateTo: sun.toISOString() };
+}
+
 export const EventDiscovery = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<EventCategory | null>(
-    null,
-  );
+  const [activeCategory, setActiveCategory] = useState<EventCategory | null>(null);
+  const [activeTimeline, setActiveTimeline] = useState<TimelineKey | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
   const fetchEvents = useCallback(
     async (pageNum: number, append = false) => {
       if (append) setLoadingMore(true);
       else setLoading(true);
 
+      const timelineDates = activeTimeline ? getTimelineDates(activeTimeline) : {};
+
       try {
         const res = await getPublicEvents({
+          search: search || undefined,
           category: activeCategory ?? undefined,
+          sortBy: sortOrder === "asc" ? "date_asc" : "date_desc",
+          ...timelineDates,
           page: pageNum,
           limit: 8,
         });
@@ -60,13 +112,19 @@ export const EventDiscovery = () => {
         setLoadingMore(false);
       }
     },
-    [activeCategory],
+    [activeCategory, activeTimeline, sortOrder, search],
   );
 
   useEffect(() => {
     setPage(1);
     fetchEvents(1);
   }, [fetchEvents]);
+
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const handleLoadMore = () => {
     const next = page + 1;
@@ -78,7 +136,19 @@ export const EventDiscovery = () => {
     setActiveCategory((prev) => (prev === cat ? null : cat));
   };
 
+  const handleTimelineToggle = (key: TimelineKey) => {
+    setActiveTimeline((prev) => (prev === key ? null : key));
+  };
+
+  const clearAll = () => {
+    setActiveCategory(null);
+    setActiveTimeline(null);
+    setSearchInput("");
+    setSearch("");
+  };
+
   const hasMore = events.length < total;
+  const hasActiveFilters = !!(activeCategory || activeTimeline || search);
 
   return (
     <section className="py-20 bg-background min-h-screen">
@@ -87,25 +157,23 @@ export const EventDiscovery = () => {
           {/* Sidebar Filter */}
           <aside className="lg:w-64 shrink-0 space-y-10">
             <div className="sticky top-28">
-              <h4 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-8 flex items-center gap-2">
+              <h4 className="text-xs uppercase text-muted-foreground mb-8 flex items-center gap-2">
                 <IconFilter size={14} /> Filter By
               </h4>
 
               <div className="mb-8">
-                <p className="text-xs font-bold uppercase tracking-widest mb-4">
-                  Timeline
-                </p>
-                <div className="space-y-2">
+                <p className="text-xs font-bold uppercase mb-4">Timeline</p>
+                <div className="space-y-3">
                   {TIMELINE_FILTERS.map((t) => (
                     <label
-                      key={t}
-                      className="flex items-center gap-3 text-muted-foreground hover:text-foreground cursor-pointer transition-colors text-xs uppercase tracking-tighter"
+                      key={t.key}
+                      className="flex items-center gap-2.5 text-muted-foreground hover:text-foreground cursor-pointer transition-colors text-xs uppercase"
                     >
-                      <input
-                        type="checkbox"
-                        className="accent-white bg-transparent border-white/20"
+                      <Checkbox
+                        checked={activeTimeline === t.key}
+                        onCheckedChange={() => handleTimelineToggle(t.key)}
                       />
-                      {t}
+                      {t.label}
                     </label>
                   ))}
                 </div>
@@ -115,17 +183,15 @@ export const EventDiscovery = () => {
                 <p className="text-xs font-bold uppercase tracking-widest mb-4">
                   The Vibe
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {VIBE_FILTERS.map((v) => (
                     <label
                       key={v.value}
-                      className="flex items-center gap-3 text-muted-foreground hover:text-foreground cursor-pointer text-xs uppercase tracking-tighter"
+                      className="flex items-center gap-2.5 text-muted-foreground hover:text-foreground cursor-pointer text-xs uppercase tracking-tighter"
                     >
-                      <input
-                        type="checkbox"
-                        className="accent-white"
+                      <Checkbox
                         checked={activeCategory === v.value}
-                        onChange={() => handleCategoryToggle(v.value)}
+                        onCheckedChange={() => handleCategoryToggle(v.value)}
                       />
                       {v.label}
                     </label>
@@ -133,13 +199,13 @@ export const EventDiscovery = () => {
                 </div>
               </div>
 
-              {activeCategory && (
+              {hasActiveFilters && (
                 <Button
                   variant="link"
-                  onClick={() => setActiveCategory(null)}
+                  onClick={clearAll}
                   className="text-[10px] uppercase tracking-widest text-muted-foreground p-0 hover:text-foreground"
                 >
-                  Clear Filters
+                  Clear All Filters
                 </Button>
               )}
             </div>
@@ -147,27 +213,56 @@ export const EventDiscovery = () => {
 
           {/* Main Feed */}
           <div className="grow">
-            <div className="flex justify-between items-center mb-8">
-              <p className="text-xs text-muted-foreground uppercase tracking-widest">
-                {loading
-                  ? "Loading…"
-                  : `Showing ${events.length} of ${total} Events`}
-              </p>
-              <button
-                onClick={() =>
-                  setSortOrder((o) => (o === "asc" ? "desc" : "asc"))
-                }
-                className="flex items-center gap-2 text-xs uppercase tracking-widest cursor-pointer hover:text-foreground/60 transition-colors"
-              >
-                Sort:{" "}
-                <span className="text-foreground font-bold">
-                  {sortOrder === "asc" ? "Soonest First" : "Latest First"}
-                </span>
-                <IconChevronDown
+            {/* Search + Sort row */}
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between mb-8">
+              <div className="relative w-full sm:max-w-xs">
+                <IconSearch
                   size={14}
-                  className={sortOrder === "desc" ? "rotate-180" : ""}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10"
                 />
-              </button>
+                <Input
+                  type="text"
+                  placeholder="Search experiences…"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="pl-8 pr-8 h-10 text-xs uppercase placeholder:text-muted-foreground/50 rounded-none"
+                />
+                {searchInput && (
+                  <button
+                    onClick={() => {
+                      setSearchInput("");
+                      setSearch("");
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <IconX size={12} />
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-4 shrink-0">
+                <p className="text-xs text-muted-foreground uppercase hidden sm:block">
+                  {loading ? "Loading…" : `${total} Events`}
+                </p>
+                <Select
+                  value={sortOrder}
+                  onValueChange={(v) => setSortOrder(v as "asc" | "desc")}
+                >
+                  <SelectTrigger
+                    size="sm"
+                    className="h-10 text-xs uppercase rounded-none w-44 border-border"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="asc" className="text-xs uppercase">
+                      Soonest First
+                    </SelectItem>
+                    <SelectItem value="desc" className="text-xs uppercase">
+                      Latest First
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {loading ? (
@@ -176,37 +271,35 @@ export const EventDiscovery = () => {
               </div>
             ) : events.length === 0 ? (
               <div className="text-center py-24">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground/50">
+                <p className="text-sm uppercase text-muted-foreground/50">
                   No experiences match your filters
                 </p>
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearAll}
+                    className="mt-4 text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-y-12 gap-x-6">
-                  {[...events]
-                    .sort((a, b) =>
-                      sortOrder === "asc"
-                        ? new Date(a.date).getTime() -
-                          new Date(b.date).getTime()
-                        : new Date(b.date).getTime() -
-                          new Date(a.date).getTime(),
-                    )
-                    .map((event) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {events.map((event) => (
                       <Link
                         href={`/${event.slug}`}
                         key={event.id}
                         className="group cursor-pointer block"
                       >
-                        <div className="relative aspect-square overflow-hidden mb-4 border border-border">
-                          {event.coverImage ? (
-                            <img
-                              src={event.coverImage}
-                              alt={event.title}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-card" />
-                          )}
+                        <div className="relative aspect-square overflow-hidden rounded-md mb-4 border border-border">
+                          <Image
+                            width={1000}
+                            height={1000}
+                            src={event.coverImage || DEFAULT_IMAGE}
+                            alt={event.title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
                           <div className="absolute bottom-4 left-4">
                             <div className="bg-black/80 backdrop-blur-md px-3 py-1 text-[9px] font-bold uppercase tracking-widest border border-white/10">
                               {new Date(event.date)
@@ -221,7 +314,7 @@ export const EventDiscovery = () => {
                         </div>
                         <div className="space-y-1">
                           <div className="flex items-center justify-between">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em]">
+                            <p className="text-xs text-muted-foreground uppercase">
                               {event.category.replace(/_/g, " ")} •{" "}
                               {event.city ?? event.venueName}
                             </p>
@@ -230,7 +323,7 @@ export const EventDiscovery = () => {
                               className="text-muted-foreground/50 group-hover:text-foreground transition-colors"
                             />
                           </div>
-                          <h5 className="text-lg font-bold uppercase tracking-tight group-hover:underline decoration-white/20 underline-offset-4">
+                          <h5 className="text-lg font-bold line-clamp-2 uppercase group-hover:underline decoration-white/20 underline-offset-4">
                             {event.title}
                           </h5>
                         </div>

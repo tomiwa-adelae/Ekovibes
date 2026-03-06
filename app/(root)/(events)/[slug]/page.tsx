@@ -19,7 +19,6 @@ import {
   verifyOrder,
   formatNaira,
   type Event,
-  type TicketTier,
 } from "@/lib/events-api";
 import { env } from "@/lib/env";
 import Image from "next/image";
@@ -29,7 +28,6 @@ import { formatDate } from "@/lib/utils";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -42,6 +40,8 @@ declare global {
   }
 }
 
+const SERVICE_FEE_PER_TICKET = 250000; // kobo — matches backend
+
 const EventDetailsPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
@@ -49,8 +49,8 @@ const EventDetailsPage = () => {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedTier, setSelectedTier] = useState<TicketTier | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  // quantities: tierId → quantity selected (0 = not selected)
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [paying, setPaying] = useState(false);
 
   useEffect(() => {
@@ -58,8 +58,9 @@ const EventDetailsPage = () => {
     getEventBySlug(slug)
       .then((e) => {
         setEvent(e);
-        const firstAvailable = e.ticketTiers.find((t) => t.sold < t.quantity);
-        if (firstAvailable) setSelectedTier(firstAvailable);
+        const init: Record<string, number> = {};
+        e.ticketTiers.forEach((t) => { init[t.id] = 0; });
+        setQuantities(init);
       })
       .catch(() => toast.error("Event not found"))
       .finally(() => setLoading(false));
@@ -77,13 +78,24 @@ const EventDetailsPage = () => {
     }
   }, []);
 
-  const serviceFee = 250000 * quantity;
-  const subtotal = selectedTier ? selectedTier.price * quantity : 0;
-  const total = subtotal + serviceFee;
+  const setQty = (tierId: string, value: number) => {
+    setQuantities((prev) => ({ ...prev, [tierId]: value }));
+  };
 
-  const availableQty = selectedTier
-    ? selectedTier.quantity - selectedTier.sold
-    : 0;
+  // Only tiers with qty > 0
+  const selectedItems = event
+    ? event.ticketTiers
+        .filter((t) => (quantities[t.id] ?? 0) > 0)
+        .map((t) => ({ tier: t, quantity: quantities[t.id] }))
+    : [];
+
+  const totalTickets = selectedItems.reduce((s, i) => s + i.quantity, 0);
+  const subtotal = selectedItems.reduce(
+    (s, i) => s + i.tier.price * i.quantity,
+    0,
+  );
+  const serviceFee = SERVICE_FEE_PER_TICKET * totalTickets;
+  const total = subtotal + serviceFee;
 
   const handlePay = async () => {
     if (!user) {
@@ -91,14 +103,16 @@ const EventDetailsPage = () => {
       router.push("/login");
       return;
     }
-    if (!selectedTier || !event) return;
+    if (!event || selectedItems.length === 0) return;
 
     setPaying(true);
     try {
       const order = await initiateOrder({
         eventId: event.id,
-        tierId: selectedTier.id,
-        quantity,
+        items: selectedItems.map((i) => ({
+          tierId: i.tier.id,
+          quantity: i.quantity,
+        })),
       });
 
       const handler = window.PaystackPop.setup({
@@ -107,7 +121,6 @@ const EventDetailsPage = () => {
         amount: order.total,
         ref: order.reference,
         metadata: { orderId: order.orderId },
-        // Must be a plain (non-async) function — Paystack validates this
         callback: (response: { reference: string }) => {
           verifyOrder(response.reference)
             .then(() => {
@@ -120,9 +133,7 @@ const EventDetailsPage = () => {
                   response.reference,
               );
             })
-            .finally(() => {
-              setPaying(false);
-            });
+            .finally(() => setPaying(false));
         },
         onClose: () => {
           toast("Payment cancelled");
@@ -148,16 +159,11 @@ const EventDetailsPage = () => {
   if (!event) {
     return (
       <main className="pt-24 bg-background text-foreground min-h-screen flex flex-col items-center justify-center gap-6">
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+        <p className="text-sm uppercase text-muted-foreground">
           Event not found
         </p>
         <Link href="/ticketing">
-          <Button
-            variant="outline"
-            className="rounded-none text-[10px] uppercase tracking-widest"
-          >
-            Browse Events
-          </Button>
+          <Button variant="outline">Browse Events</Button>
         </Link>
       </main>
     );
@@ -169,9 +175,8 @@ const EventDetailsPage = () => {
     <main className="py-16">
       <div className="container">
         <div className="flex flex-col lg:flex-row gap-4">
-          {/* LEFT — The Vibe (65%) */}
+          {/* LEFT — Event info */}
           <div className="lg:w-[65%]">
-            {/* Hero Image */}
             <div className="aspect-video w-full rounded-md overflow-hidden mb-6 border border-border">
               <Image
                 width={1000}
@@ -182,7 +187,6 @@ const EventDetailsPage = () => {
               />
             </div>
 
-            {/* Headline & Meta */}
             <div className="mb-8">
               <Badge variant={"secondary"}>
                 {event.category.replace(/_/g, " ")}
@@ -224,7 +228,6 @@ const EventDetailsPage = () => {
               </div>
             </div>
 
-            {/* Description */}
             {event.description && (
               <div className="mb-16">
                 <h3 className="text-lg font-semibold uppercase mb-4">
@@ -237,16 +240,16 @@ const EventDetailsPage = () => {
             )}
           </div>
 
-          {/* RIGHT — Box Office (35%, sticky) */}
+          {/* RIGHT — Box Office */}
           <div className="lg:w-[35%]">
             <Card className="sticky top-28">
               <CardHeader className="border-b">
-                <CardTitle className="flex items-center">
+                <CardTitle className="flex items-center gap-2">
                   <IconTicket size={16} /> Select Access
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {event.isMemberOnly && !user && (
+                {event.isMemberOnly && !user ? (
                   <div className="text-center py-4 space-y-4">
                     <IconLock
                       size={32}
@@ -260,119 +263,130 @@ const EventDetailsPage = () => {
                       <Button className="w-full">Become a Member</Button>
                     </Link>
                   </div>
-                )}
-
-                {(!event.isMemberOnly || user) && (
+                ) : allSoldOut ? (
+                  <p className="text-center text-sm text-muted-foreground py-6 uppercase tracking-widest">
+                    Sold Out
+                  </p>
+                ) : (
                   <>
-                    {/* Tier Selection */}
+                    {/* Per-tier quantity steppers */}
                     <div className="space-y-3 mb-6">
                       {event.ticketTiers.map((tier) => {
                         const isSoldOut = tier.sold >= tier.quantity;
                         const remaining = tier.quantity - tier.sold;
-                        const isSelected = selectedTier?.id === tier.id;
+                        const qty = quantities[tier.id] ?? 0;
 
                         return (
-                          <Card
+                          <div
                             key={tier.id}
-                            onClick={() => !isSoldOut && setSelectedTier(tier)}
-                            className={`cursor-pointer py-4 transition-all ${
+                            className={`border rounded-lg p-4 transition-all ${
                               isSoldOut
-                                ? "border-border opacity-40 cursor-not-allowed"
-                                : isSelected
+                                ? "border-border opacity-40"
+                                : qty > 0
                                   ? "border-foreground bg-muted"
-                                  : "border-border hover:border-foreground/30"
+                                  : "border-border"
                             }`}
                           >
-                            <CardContent>
-                              <div className="flex items-center justify-between gap-2">
-                                <CardDescription>{tier.name}</CardDescription>
-                                <CardDescription>
-                                  {isSoldOut
-                                    ? "Sold Out"
-                                    : remaining <= 10
-                                      ? `${remaining} Left`
-                                      : "Available"}
-                                </CardDescription>
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold">
+                                  {tier.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {formatNaira(tier.price)} each
+                                </p>
+                                {isSoldOut ? (
+                                  <p className="text-[10px] text-muted-foreground uppercase mt-1">
+                                    Sold Out
+                                  </p>
+                                ) : remaining <= 10 ? (
+                                  <p className="text-[10px] text-orange-400 uppercase mt-1">
+                                    {remaining} left
+                                  </p>
+                                ) : null}
                               </div>
-                              <CardTitle className="text-sm mt-2">
-                                {formatNaira(tier.price)}
-                              </CardTitle>
-                            </CardContent>
-                          </Card>
+
+                              {!isSoldOut && (
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <Button
+                                    size="icon-sm"
+                                    variant="secondary"
+                                    onClick={() =>
+                                      setQty(tier.id, Math.max(0, qty - 1))
+                                    }
+                                    disabled={qty === 0}
+                                  >
+                                    −
+                                  </Button>
+                                  <span className="text-sm font-semibold w-5 text-center tabular-nums">
+                                    {qty}
+                                  </span>
+                                  <Button
+                                    size="icon-sm"
+                                    variant="secondary"
+                                    onClick={() =>
+                                      setQty(
+                                        tier.id,
+                                        Math.min(remaining, qty + 1),
+                                      )
+                                    }
+                                    disabled={qty >= remaining}
+                                  >
+                                    +
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
 
-                    <Separator className="my-6" />
-
-                    {/* Quantity */}
-                    {selectedTier && !allSoldOut && (
-                      <Card>
-                        <CardContent className="flex items-center justify-between ">
-                          <CardDescription>Quantity</CardDescription>
-                          <div className="flex items-center gap-4">
-                            <Button
-                              size={"icon-sm"}
-                              variant={"secondary"}
-                              onClick={() =>
-                                setQuantity((q) => Math.max(1, q - 1))
-                              }
-                            >
-                              −
-                            </Button>
-                            <span className="text-sm font-semibold w-4 text-center">
-                              {quantity}
-                            </span>
-                            <Button
-                              size={"icon-sm"}
-                              variant={"secondary"}
-                              onClick={() =>
-                                setQuantity((q) =>
-                                  Math.min(availableQty, q + 1),
-                                )
-                              }
-                            >
-                              +
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    <Separator className="my-6" />
-
-                    {/* Order Summary */}
-                    {selectedTier && (
-                      <div className="mb-4 space-y-2">
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>
-                            {selectedTier.name} × {quantity}
-                          </span>
-                          <span>{formatNaira(subtotal)}</span>
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Service Fee</span>
-                          <span>{formatNaira(serviceFee)}</span>
-                        </div>
+                    {/* Order summary — visible when at least one tier selected */}
+                    {selectedItems.length > 0 && (
+                      <>
                         <Separator className="my-4" />
-                        <div className="flex justify-between text-base font-semibold">
-                          <span>Total</span>
-                          <span>{formatNaira(total)}</span>
+                        <div className="space-y-2 mb-4">
+                          {selectedItems.map((item) => (
+                            <div
+                              key={item.tier.id}
+                              className="flex justify-between text-xs text-muted-foreground"
+                            >
+                              <span>
+                                {item.tier.name} × {item.quantity}
+                              </span>
+                              <span>
+                                {formatNaira(item.tier.price * item.quantity)}
+                              </span>
+                            </div>
+                          ))}
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>
+                              Service Fee ({totalTickets} ticket
+                              {totalTickets !== 1 ? "s" : ""})
+                            </span>
+                            <span>{formatNaira(serviceFee)}</span>
+                          </div>
+                          <Separator className="my-3" />
+                          <div className="flex justify-between text-base font-semibold">
+                            <span>Total</span>
+                            <span>{formatNaira(total)}</span>
+                          </div>
                         </div>
-                      </div>
+                      </>
                     )}
 
                     <Button
                       onClick={handlePay}
-                      disabled={!selectedTier || allSoldOut || paying}
+                      disabled={selectedItems.length === 0 || paying}
                       className="w-full"
                     >
                       {paying ? (
                         <Loader />
-                      ) : allSoldOut ? (
-                        "Sold Out"
+                      ) : selectedItems.length === 0 ? (
+                        "Select tickets above"
                       ) : (
-                        "Confirm & Pay"
+                        `Confirm & Pay — ${formatNaira(total)}`
                       )}
                     </Button>
 

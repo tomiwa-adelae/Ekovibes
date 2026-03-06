@@ -50,8 +50,6 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
-  const { isSubmitting } = form.formState;
-
   const onSubmit = async (data: LoginSchemaType) => {
     startTransition(async () => {
       try {
@@ -70,7 +68,7 @@ export default function LoginPage() {
 
   return (
     <Card className="border-none shadow-2xl overflow-hidden bg-white dark:bg-card">
-      <CardHeader className="flex flex-col items-center pt-4">
+      <CardHeader className="flex flex-col text-center items-center pt-4">
         <Link
           href="/"
           className="flex items-center hover:text-primary text-slate-900 mb-1.5"
@@ -170,13 +168,19 @@ export default function LoginPage() {
             <Button disabled={pending} type="submit" className="w-full">
               {pending ? <Loader text="Signing in..." /> : "Sign in"}
             </Button>
+            <Link
+              href="/forgot-password"
+              className="text-muted-foreground hover:underline text-sm hover:text-primary"
+            >
+              Forgot password?
+            </Link>
           </form>
         </Form>
 
         {/* Footer */}
         <div className="text-center text-muted-foreground text-sm">
-          <p className="mb-2">Don't have an account yet?</p>
-          <Link href="/register" className="hover:underline">
+          <span className="mb-2">Don't have an account yet?</span>
+          <Link href="/register" className="hover:underline hover:text-primary">
             Join now
           </Link>
         </div>

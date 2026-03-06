@@ -70,7 +70,18 @@ const SuccessPage = () => {
               <Card key={ticket.id}>
                 <CardContent className="flex flex-col sm:flex-row gap-8 items-start justify-center">
                   {/* QR Code */}
-                  <div className="w-full sm:w-auto flex items-center sm:items-start justify-center sm:justify-start">
+                  <div
+                    className={`bg-white p-3 shrink-0 ${ticket.isUsed ? "grayscale opacity-50" : ""}`}
+                  >
+                    <QRCodeSVG
+                      value={ticket.code}
+                      size={120}
+                      level="H"
+                      bgColor="#ffffff"
+                      fgColor="#000000"
+                    />
+                  </div>
+                  {/* <div className="w-full sm:w-auto flex items-center sm:items-start justify-center sm:justify-start">
                     <QRCodeSVG
                       value={ticket.code}
                       size={140}
@@ -78,7 +89,7 @@ const SuccessPage = () => {
                       bgColor="#ffffff"
                       fgColor="#000000"
                     />
-                  </div>
+                  </div> */}
 
                   {/* Ticket Info */}
                   <div className="space-y-4 text-center flex-1 sm:text-left">

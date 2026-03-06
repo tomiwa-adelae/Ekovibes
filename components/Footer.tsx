@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
+import { PHONE_NUMBER } from "@/constants";
 
 export const Footer = () => {
   return (
@@ -19,27 +20,39 @@ export const Footer = () => {
 
           {/* Links */}
           <div>
-            <h4 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-6">
+            <h4 className="text-[10px] uppercase  text-muted-foreground mb-6">
               Ecosystem
             </h4>
-            <ul className="space-y-4 text-xs uppercase tracking-widest font-medium">
+            <ul className="space-y-4 text-xs uppercase  font-medium">
               <li>
-                <Link href="/reservations" className="hover:text-muted-foreground transition-colors">
+                <Link
+                  href="/reservations"
+                  className="hover:text-muted-foreground transition-colors"
+                >
                   The Black Book
                 </Link>
               </li>
               <li>
-                <Link href="/shop" className="hover:text-muted-foreground transition-colors">
+                <Link
+                  href="/shop"
+                  className="hover:text-muted-foreground transition-colors"
+                >
                   The Vault
                 </Link>
               </li>
               <li>
-                <Link href="/concierge" className="hover:text-muted-foreground transition-colors">
+                <Link
+                  href="/concierge"
+                  className="hover:text-muted-foreground transition-colors"
+                >
                   White Glove
                 </Link>
               </li>
               <li>
-                <Link href="/ticketing" className="hover:text-muted-foreground transition-colors">
+                <Link
+                  href="/ticketing"
+                  className="hover:text-muted-foreground transition-colors"
+                >
                   Experiences
                 </Link>
               </li>
@@ -48,29 +61,31 @@ export const Footer = () => {
 
           {/* Contact/Support */}
           <div>
-            <h4 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-6">
+            <h4 className="text-[10px] uppercase  text-muted-foreground mb-6">
               Inquiries
             </h4>
-            <ul className="space-y-4 text-xs tracking-widest">
+            <ul className="space-y-4 text-xs ">
               <li className="text-muted-foreground">
                 Partnerships:{" "}
-                <span className="text-foreground">partners@ekovibes.ng</span>
+                <span className="text-foreground">the9ineagency@gmail.com</span>
               </li>
               <li className="text-muted-foreground">
-                Concierge: <span className="text-foreground">vip@ekovibes.ng</span>
+                Concierge:{" "}
+                <span className="text-foreground">the9ineagency@gmail.com</span>
               </li>
               <li className="text-muted-foreground">
-                WhatsApp: <span className="text-foreground">+234 810 000 0000</span>
+                WhatsApp:{" "}
+                <span className="text-foreground">{PHONE_NUMBER}</span>
               </li>
             </ul>
           </div>
 
           {/* Newsletter */}
           <div>
-            <h4 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-6">
+            <h4 className="text-[10px] uppercase  text-muted-foreground mb-6">
               The Vibe List
             </h4>
-            <p className="text-[10px] text-white/40 mb-4 uppercase tracking-widest">
+            <p className="text-[10px] text-white/40 mb-4 uppercase ">
               Join the inner circle for weekly drops.
             </p>
             <div className="flex border-b border-border pb-2">
@@ -79,7 +94,7 @@ export const Footer = () => {
                 placeholder="EMAIL ADDRESS"
                 className="bg-transparent border-none outline-none text-xs w-full placeholder:text-muted-foreground/40"
               />
-              <button className="text-[10px] font-bold uppercase tracking-widest hover:text-muted-foreground transition-colors">
+              <button className="text-[10px] font-bold uppercase  hover:text-muted-foreground transition-colors">
                 Join
               </button>
             </div>
@@ -87,19 +102,43 @@ export const Footer = () => {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-border gap-6">
-          <p className="text-[10px] text-muted-foreground tracking-widest uppercase">
-            © 2026 Ekovibes Lifestyle Group. All Rights Reserved.
+          <p className="text-[10px] text-muted-foreground  uppercase">
+            &copy; {new Date().getFullYear()} Ekovibes Lifestyle Group. All
+            Rights Reserved.
           </p>
-          <div className="flex gap-8 text-[10px] text-muted-foreground tracking-widest uppercase">
-            <Link href="/terms" className="hover:text-white">
+          <div className="flex flex-wrap justify-center gap-6 text-sm, text-muted-foreground uppercase">
+            <Link
+              href="/terms"
+              className="hover:text-white transition-colors text-xs"
+            >
               Terms
             </Link>
-            <Link href="/privacy" className="hover:text-white">
+            <Link
+              href="/privacy"
+              className="hover:text-white transition-colors text-xs"
+            >
               Privacy
             </Link>
-            <Link href="/instagram" className="hover:text-white">
-              Instagram
+            <Link
+              href="/refund-policy"
+              className="hover:text-white transition-colors text-xs"
+            >
+              Refunds
             </Link>
+            <Link
+              href="/faq"
+              className="hover:text-white transition-colors text-xs"
+            >
+              FAQs
+            </Link>
+            <a
+              href="https://www.instagram.com/ekovibes_"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors text-xs"
+            >
+              Instagram
+            </a>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useState, useTransition } from "react";
+import { Suspense, useEffect, useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,9 +22,20 @@ import {
   IconCheck,
   IconX,
   IconLoader2,
+  IconEyeClosed,
 } from "@tabler/icons-react";
 import { postData } from "@/lib/api";
 import { Loader } from "@/components/Loader";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Logo } from "@/components/Logo";
+import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 const schema = z
   .object({
@@ -61,17 +72,57 @@ function NewPasswordContent() {
 
   const [pending, startTransition] = useTransition();
 
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { newPassword: "", confirmPassword: "" },
   });
 
-  const { watch } = form;
-  const password = watch("newPassword");
-  const strength = REQUIREMENTS.filter((r) => r.test(password)).length;
+  const password = form.watch("newPassword");
+  const confirmPassword = form.watch("confirmPassword");
+
+  // 🧩 When password or confirmPassword changes, recheck the match
+  useEffect(() => {
+    if (confirmPassword !== "" || password !== "") {
+      form.trigger("confirmPassword");
+    }
+  }, [password, confirmPassword, form]);
+  const [isVisible, setIsVisible] = useState<boolean>(false);
+
+  const [isConfirmVisible, setConfirmIsVisible] = useState<boolean>(false);
+  const toggleVisibility = () => setIsVisible((prevState) => !prevState);
+  const toggleConfirmVisibility = () =>
+    setConfirmIsVisible((prevState) => !prevState);
+
+  const checkStrength = (pass: string) => {
+    const requirements = [
+      { regex: /.{8,}/, text: "At least 8 characters" },
+      { regex: /[0-9]/, text: "At least 1 number" },
+      { regex: /[a-z]/, text: "At least 1 lowercase letter" },
+      { regex: /[A-Z]/, text: "At least 1 uppercase letter" },
+      {
+        regex: /[!@#$%^&*(),.?":{}|<>]/,
+        text: "At least 1 special character",
+      },
+    ];
+
+    return requirements.map((req) => ({
+      met: req.regex.test(pass),
+      text: req.text,
+    }));
+  };
+
+  const strength = checkStrength(password);
+
+  const strengthScore = useMemo(() => {
+    return strength.filter((req) => req.met).length;
+  }, [strength]);
+
+  const getStrengthText = (score: number) => {
+    if (score === 0) return "Enter a password";
+    if (score <= 2) return "Weak password";
+    if (score === 3) return "Medium password";
+    return "Strong password";
+  };
 
   const onSubmit = async (data: FormValues) => {
     startTransition(async () => {
@@ -96,17 +147,21 @@ function NewPasswordContent() {
   };
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-6 relative">
-      <div className="w-full max-w-sm relative z-10">
-        <div className="mb-10 text-left">
-          <h1 className="text-3xl font-bold uppercase tracking-tighter text-foreground mb-2">
-            New <span className="text-foreground/40 italic">Identity</span>
-          </h1>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground leading-relaxed">
-            Create a secure password to re-enter the ecosystem.
-          </p>
-        </div>
+    <Card className="border-none shadow-2xl overflow-hidden bg-white dark:bg-card">
+      <CardHeader className="flex flex-col text-center items-center pt-4">
+        <Link
+          href="/"
+          className="flex items-center hover:text-primary text-slate-900 mb-1.5"
+        >
+          <Logo type="green" size="h-10" />
+        </Link>
+        <CardTitle>New Identity</CardTitle>
+        <CardDescription>
+          Create a secure password to re-enter the ecosystem.
+        </CardDescription>
+      </CardHeader>
 
+      <CardContent className="pb-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* New Password */}
@@ -115,125 +170,147 @@ function NewPasswordContent() {
               name="newPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={labelCls}>New Password</FormLabel>
+                  <FormLabel htmlFor="password">Password</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
-                        type={showNew ? "text" : "password"}
-                        placeholder="••••••••"
-                        className={inputCls}
+                        id="password"
+                        className="pe-9"
+                        placeholder="Password"
+                        type={isVisible ? "text" : "password"}
                         {...field}
                       />
-                      <button
+                      <Button
+                        className="absolute top-[50%] translate-y-[-50%] end-1 text-muted-foreground/80"
+                        variant={"ghost"}
+                        size="icon"
                         type="button"
-                        onClick={() => setShowNew((p) => !p)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+                        onClick={toggleVisibility}
+                        aria-label={
+                          isVisible ? "Hide password" : "Show password"
+                        }
+                        aria-pressed={isVisible}
+                        aria-controls="password"
                       >
-                        {showNew ? (
-                          <IconEyeOff size={18} />
+                        {isVisible ? (
+                          <IconEyeClosed
+                            className="size-4"
+                            aria-hidden="true"
+                          />
                         ) : (
-                          <IconEye size={18} />
+                          <IconEye className="size-4" aria-hidden="true" />
                         )}
-                      </button>
+                      </Button>
                     </div>
                   </FormControl>
-                  {/* Strength meter */}
-                  <div className="flex gap-1 h-px mt-2">
-                    {[1, 2, 3].map((step) => (
-                      <div
-                        key={step}
-                        className={`grow transition-all duration-500 ${
-                          strength >= step
-                            ? strength === 3
-                              ? "bg-foreground"
-                              : "bg-foreground/40"
-                            : "bg-border"
-                        }`}
-                      />
-                    ))}
+                  <FormMessage />
+                  <div
+                    className={cn(
+                      password.length !== 0 ? "block mt-2 space-y-3" : "hidden",
+                    )}
+                  >
+                    <Progress
+                      value={(strengthScore / 5) * 100}
+                      className={cn("h-1")}
+                    />
+                    {/* Password strength description */}
+                    <p className="text-foreground mb-2 text-sm font-medium">
+                      {getStrengthText(strengthScore)}. Must contain:
+                    </p>
+
+                    {/* Password requirements list */}
+                    <ul
+                      className="space-y-1.5"
+                      aria-label="Password requirements"
+                    >
+                      {strength.map((req, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          {req.met ? (
+                            <IconCheck
+                              size={16}
+                              className="text-emerald-500"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <IconX
+                              size={16}
+                              className="text-muted-foreground/80"
+                              aria-hidden="true"
+                            />
+                          )}
+                          <span
+                            className={`text-xs ${
+                              req.met
+                                ? "text-emerald-600"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {req.text}
+                            <span className="sr-only">
+                              {req.met
+                                ? " - Requirement met"
+                                : " - Requirement not met"}
+                            </span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <FormMessage className={errorCls} />
                 </FormItem>
               )}
             />
-
-            {/* Confirm Password */}
             <FormField
               control={form.control}
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={labelCls}>Confirm Identity</FormLabel>
+                  <FormLabel>Confirm password</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
-                        type={showConfirm ? "text" : "password"}
-                        placeholder="••••••••"
-                        className={inputCls}
+                        type={isConfirmVisible ? "text" : "password"}
+                        placeholder="Confirm new password"
                         {...field}
                       />
-                      <button
+                      <Button
+                        className="absolute top-[50%] translate-y-[-50%] end-1 text-muted-foreground/80"
+                        variant="ghost"
+                        size="icon"
                         type="button"
-                        onClick={() => setShowConfirm((p) => !p)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+                        onClick={toggleConfirmVisibility}
+                        aria-label={
+                          isConfirmVisible ? "Hide password" : "Show password"
+                        }
+                        aria-pressed={isConfirmVisible}
+                        aria-controls="confirmPassword"
                       >
-                        {showConfirm ? (
-                          <IconEyeOff size={18} />
+                        {isConfirmVisible ? (
+                          <IconEyeClosed
+                            className="size-4"
+                            aria-hidden="true"
+                          />
                         ) : (
-                          <IconEye size={18} />
+                          <IconEye className="size-4" aria-hidden="true" />
                         )}
-                      </button>
+                      </Button>
                     </div>
                   </FormControl>
-                  <FormMessage className={errorCls} />
+                  <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Requirements checklist */}
-            <div className="grid grid-cols-2 gap-y-2 py-2">
-              {REQUIREMENTS.map((req) => {
-                const met = req.test(password);
-                return (
-                  <div key={req.label} className="flex items-center gap-2">
-                    {met ? (
-                      <IconCheck
-                        size={12}
-                        className="text-foreground shrink-0"
-                      />
-                    ) : (
-                      <IconX
-                        size={12}
-                        className="text-muted-foreground shrink-0"
-                      />
-                    )}
-                    <span
-                      className={`text-[9px] uppercase tracking-widest ${met ? "text-foreground" : "text-muted-foreground"}`}
-                    >
-                      {req.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <Button
-              type="submit"
-              disabled={pending || strength < 3}
-              className="w-full bg-foreground text-background hover:bg-foreground/90 py-7 rounded-none font-bold uppercase tracking-[0.3em] text-[10px] disabled:opacity-40"
-            >
+            <Button type="submit" className="w-full">
               {pending ? <Loader text="Updating..." /> : "Update Password"}
             </Button>
           </form>
         </Form>
 
-        <div className="mt-12 text-center">
-          <p className="text-[9px] uppercase tracking-widest text-muted-foreground">
-            Secured by Ekovibe
-          </p>
+        <div className="mt-8 text-center">
+          <p className="text-xs text-muted-foreground">Secured by Ekovibe</p>
         </div>
-      </div>
-    </main>
+      </CardContent>
+    </Card>
   );
 }
 
