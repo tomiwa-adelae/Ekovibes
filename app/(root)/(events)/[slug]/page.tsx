@@ -94,6 +94,8 @@ const EventDetailsPage = () => {
   const serviceFee = SERVICE_FEE_PER_TICKET * totalTickets;
   const total = subtotal + serviceFee;
 
+  console.log(total);
+
   const handlePay = async () => {
     if (!user) {
       toast.error("Please log in to purchase tickets");
