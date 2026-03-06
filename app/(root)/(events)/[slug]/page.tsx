@@ -25,12 +25,7 @@ import Image from "next/image";
 import { DEFAULT_IMAGE } from "@/constants";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Loader } from "@/components/Loader";
 
@@ -40,7 +35,7 @@ declare global {
   }
 }
 
-const SERVICE_FEE_PER_TICKET = 250000; // kobo — matches backend
+const SERVICE_FEE_PER_TICKET = 15000; // kobo — matches backend
 
 const EventDetailsPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -59,7 +54,9 @@ const EventDetailsPage = () => {
       .then((e) => {
         setEvent(e);
         const init: Record<string, number> = {};
-        e.ticketTiers.forEach((t) => { init[t.id] = 0; });
+        e.ticketTiers.forEach((t) => {
+          init[t.id] = 0;
+        });
         setQuantities(init);
       })
       .catch(() => toast.error("Event not found"))
