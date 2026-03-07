@@ -3,14 +3,14 @@ import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import Head from "next/head";
 
 const outfits = Outfit({
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
-const siteUrl = "https://ekovibe.com.ng";
+const siteUrl = "https://www.ekovibe.com.ng";
+const ogImage = `${siteUrl}/assets/images/og-image.png`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -47,9 +47,9 @@ export const metadata: Metadata = {
       "Discover and book tickets to Lagos' most exclusive concerts, private dining, art exhibitions, and luxury experiences. Where the culture lives.",
     images: [
       {
-        url: "/assets/images/og-image.png",
-        width: 1200,
-        height: 630,
+        url: ogImage,
+        width: 1080,
+        height: 1080,
         alt: "Ekovibe — Lagos' Premier Event & Experience Platform",
       },
     ],
@@ -58,8 +58,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Ekovibe — Lagos' Premier Event & Experience Platform",
     description:
-      "Discover and book tickets to Lagos' most exclusive concerts, private dining, art exhibitions, and luxury experiences. Where the culture lives",
-    images: ["/assets/images/og-image.png"],
+      "Discover and book tickets to Lagos' most exclusive concerts, private dining, art exhibitions, and luxury experiences. Where the culture lives.",
+    images: [ogImage],
     creator: "@ekovibe",
   },
   icons: {
@@ -75,20 +75,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <Head>
-        <meta property="og:image" content="/assets/images/og-image.png" />
-        <meta property="og:image" content="/assets/images/og-image.png" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, user-scalable=no"
-        />
-        <meta
-          data-n-head="ssr"
-          data-hid="viewport"
-          name="viewport"
-          content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1"
-        />
-      </Head>
       <body className={`${outfits.className} antialiased`}>
         <ThemeProvider
           attribute="class"
