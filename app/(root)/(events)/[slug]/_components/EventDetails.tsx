@@ -12,7 +12,7 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { useAuth } from "@/store/useAuth";
+import { useAuth, type User } from "@/store/useAuth";
 import {
   getEventBySlug,
   initiateOrder,
@@ -28,6 +28,7 @@ import { formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Loader } from "@/components/Loader";
+import { AuthModal } from "@/components/AuthModal";
 
 declare global {
   interface Window {
@@ -47,6 +48,7 @@ const EventDetails = () => {
   // quantities: tierId → quantity selected (0 = not selected)
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [paying, setPaying] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -94,12 +96,9 @@ const EventDetails = () => {
   const serviceFee = SERVICE_FEE_PER_TICKET * totalTickets;
   const total = subtotal + serviceFee;
 
-  const handlePay = async () => {
-    if (!user) {
-      toast.error("Please log in to purchase tickets");
-      router.push("/login");
-      return;
-    }
+  // Core payment logic — accepts the authenticated user explicitly so it can be
+  // called immediately after the auth modal resolves (no stale closure issues).
+  const executePayment = async (currentUser: User) => {
     if (!event || selectedItems.length === 0) return;
 
     setPaying(true);
@@ -114,7 +113,7 @@ const EventDetails = () => {
 
       const handler = window.PaystackPop.setup({
         key: env.NEXT_PUBLIC_PAYSTACK_KEY,
-        email: user.email,
+        email: currentUser.email,
         amount: order.total,
         ref: order.reference,
         metadata: { orderId: order.orderId },
@@ -143,6 +142,21 @@ const EventDetails = () => {
       toast.error(e?.response?.data?.message ?? "Could not initiate payment");
       setPaying(false);
     }
+  };
+
+  // Entry point — opens auth modal if not logged in, otherwise pays directly.
+  const handlePay = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    executePayment(user);
+  };
+
+  // Called by AuthModal after successful login / register.
+  const handleAuthSuccess = (authedUser: User) => {
+    setShowAuthModal(false);
+    executePayment(authedUser);
   };
 
   if (loading) {
@@ -397,6 +411,12 @@ const EventDetails = () => {
           </div>
         </div>
       </div>
+
+      <AuthModal
+        open={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </main>
   );
 };
