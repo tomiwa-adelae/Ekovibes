@@ -3,7 +3,7 @@ import { useAuth } from "@/store/useAuth";
 import { env } from "./env";
 
 const api: AxiosInstance = axios.create({
-  baseURL: env.NEXT_PUBLIC_BACKEND_URL,
+  baseURL: "/api",
 
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
