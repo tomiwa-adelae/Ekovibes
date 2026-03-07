@@ -1,10 +1,13 @@
-"use client";
-
+import type { Metadata } from "next";
 import React from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
-export default function DashboardLayout({
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
+export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;

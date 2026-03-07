@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms & Conditions — Ekovibe",
+  title: "Terms & Conditions",
+  description:
+    "Read Ekovibe's Terms & Conditions governing use of our event ticketing, concierge, and lifestyle platform.",
+  alternates: { canonical: "https://www.ekovibe.com.ng/terms" },
 };
 
 const sections = [

@@ -2,7 +2,10 @@ import { PHONE_NUMBER } from "@/constants";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Refund & Cancellation Policy — Ekovibe",
+  title: "Refund & Cancellation Policy",
+  description:
+    "Understand Ekovibe's refund and cancellation policy for event tickets, memberships, and concierge bookings.",
+  alternates: { canonical: "https://www.ekovibe.com.ng/refund-policy" },
 };
 
 export default function RefundPolicyPage() {

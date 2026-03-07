@@ -2,7 +2,10 @@ import { PHONE_NUMBER } from "@/constants";
 import Link from "next/link";
 
 export const metadata = {
-  title: "FAQs — Ekovibe",
+  title: "Frequently Asked Questions",
+  description:
+    "Got questions about buying tickets, memberships, refunds, or attending Ekovibe events? Find all your answers here.",
+  alternates: { canonical: "https://www.ekovibe.com.ng/faq" },
 };
 
 type FAQ = { q: string; a: string };

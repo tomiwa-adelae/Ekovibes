@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Privacy Policy — Ekovibe",
+  title: "Privacy Policy",
+  description:
+    "Learn how Ekovibe collects, uses, and protects your personal data in compliance with the Nigeria Data Protection Act (NDPA) 2023.",
+  alternates: { canonical: "https://www.ekovibe.com.ng/privacy" },
 };
 
 const sections = [
