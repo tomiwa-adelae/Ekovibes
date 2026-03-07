@@ -10,7 +10,7 @@ const outfits = Outfit({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
-const siteUrl = "https://www.ekovibe.com.ng";
+const siteUrl = "https://ekovibe.com.ng";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
