@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Ekovibe — Lagos' Premier Event & Experience Platform",
     description:
-      "Discover and book tickets to Lagos' most exclusive concerts, private dining, art exhibitions, and luxury experiences. Where the culture lives.",
+      "Discover and book tickets to Lagos' most exclusive concerts, private dining, art exhibitions, and luxury experiences. Where the culture lives",
     images: ["/assets/images/og-image.png"],
     creator: "@ekovibe",
   },
