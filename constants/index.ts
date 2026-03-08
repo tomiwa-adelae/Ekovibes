@@ -4,4 +4,5 @@ export const DEFAULT_IMAGE =
 export const DEFAULT_PROFILE_IMAGE = "/assets/images/profile-img.jpg";
 
 export const PHONE_NUMBER = "+234 707 692 2032";
-export const EMAIL = "the9ineagency@gmail.com";
+export const EMAIL = "admin@ekovibe.com.ng";
+export const WHATSAPP_LINK = "https://wa.me/2347076922032";

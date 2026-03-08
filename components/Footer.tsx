@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
-import { PHONE_NUMBER } from "@/constants";
+import { PHONE_NUMBER, WHATSAPP_LINK } from "@/constants";
+import { env } from "@/lib/env";
 
 export const Footer = () => {
   return (
@@ -25,28 +26,28 @@ export const Footer = () => {
             </h4>
             <ul className="space-y-4 text-xs uppercase  font-medium">
               <li>
-                <Link
+                {/* <Link
                   href="/reservations"
                   className="hover:text-muted-foreground transition-colors"
-                >
-                  The Black Book
-                </Link>
+                > */}
+                The Black Book
+                {/* </Link> */}
               </li>
               <li>
-                <Link
+                {/* <Link
                   href="/shop"
                   className="hover:text-muted-foreground transition-colors"
-                >
-                  The Vault
-                </Link>
+                > */}
+                The Vault
+                {/* </Link> */}
               </li>
               <li>
-                <Link
+                {/* <Link
                   href="/concierge"
                   className="hover:text-muted-foreground transition-colors"
-                >
-                  White Glove
-                </Link>
+                > */}
+                White Glove
+                {/* </Link> */}
               </li>
               <li>
                 <Link
@@ -67,15 +68,30 @@ export const Footer = () => {
             <ul className="space-y-4 text-xs ">
               <li className="text-muted-foreground">
                 Partnerships:{" "}
-                <span className="text-foreground">the9ineagency@gmail.com</span>
+                <a
+                  href={`mailto:${env.NEXT_PUBLIC_SUPPORT_EMAIL_ADDRESS}`}
+                  className="text-foreground hover:text-white hover:underline"
+                >
+                  {env.NEXT_PUBLIC_SUPPORT_EMAIL_ADDRESS}
+                </a>
               </li>
               <li className="text-muted-foreground">
                 Concierge:{" "}
-                <span className="text-foreground">the9ineagency@gmail.com</span>
+                <a
+                  href={`mailto:${env.NEXT_PUBLIC_SUPPORT_EMAIL_ADDRESS}`}
+                  className="text-foreground hover:text-white hover:underline"
+                >
+                  {env.NEXT_PUBLIC_SUPPORT_EMAIL_ADDRESS}
+                </a>
               </li>
               <li className="text-muted-foreground">
                 WhatsApp:{" "}
-                <span className="text-foreground">{PHONE_NUMBER}</span>
+                <a
+                  href={WHATSAPP_LINK}
+                  className="text-foreground hover:text-white hover:underline"
+                >
+                  {PHONE_NUMBER}
+                </a>
               </li>
             </ul>
           </div>
@@ -132,7 +148,7 @@ export const Footer = () => {
               FAQs
             </Link>
             <a
-              href="https://www.instagram.com/ekovibes_"
+              href="https://www.instagram.com/ekovibe.ng/"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-white transition-colors text-xs"

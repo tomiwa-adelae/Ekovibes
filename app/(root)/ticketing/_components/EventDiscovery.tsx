@@ -43,7 +43,10 @@ const VIBE_FILTERS: { label: string; value: EventCategory }[] = [
   { label: "Wellness", value: "WELLNESS" },
 ];
 
-function getTimelineDates(key: TimelineKey): { dateFrom: string; dateTo: string } {
+function getTimelineDates(key: TimelineKey): {
+  dateFrom: string;
+  dateTo: string;
+} {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -81,8 +84,12 @@ export const EventDiscovery = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<EventCategory | null>(null);
-  const [activeTimeline, setActiveTimeline] = useState<TimelineKey | null>(null);
+  const [activeCategory, setActiveCategory] = useState<EventCategory | null>(
+    null,
+  );
+  const [activeTimeline, setActiveTimeline] = useState<TimelineKey | null>(
+    null,
+  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -92,7 +99,9 @@ export const EventDiscovery = () => {
       if (append) setLoadingMore(true);
       else setLoading(true);
 
-      const timelineDates = activeTimeline ? getTimelineDates(activeTimeline) : {};
+      const timelineDates = activeTimeline
+        ? getTimelineDates(activeTimeline)
+        : {};
 
       try {
         const res = await getPublicEvents({
@@ -225,7 +234,7 @@ export const EventDiscovery = () => {
                   placeholder="Search experiences…"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="pl-8 pr-8 h-10 text-xs uppercase placeholder:text-muted-foreground/50 rounded-none"
+                  className="pl-8 pr-8 placeholder:text-muted-foreground/50"
                 />
                 {searchInput && (
                   <button
@@ -247,10 +256,7 @@ export const EventDiscovery = () => {
                   value={sortOrder}
                   onValueChange={(v) => setSortOrder(v as "asc" | "desc")}
                 >
-                  <SelectTrigger
-                    size="sm"
-                    className="h-10 text-xs uppercase rounded-none w-44 border-border"
-                  >
+                  <SelectTrigger size="sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -271,7 +277,7 @@ export const EventDiscovery = () => {
               </div>
             ) : events.length === 0 ? (
               <div className="text-center py-24">
-                <p className="text-sm uppercase text-muted-foreground/50">
+                <p className="text-sm text-muted-foreground/50">
                   No experiences match your filters
                 </p>
                 {hasActiveFilters && (
@@ -287,48 +293,48 @@ export const EventDiscovery = () => {
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                   {events.map((event) => (
-                      <Link
-                        href={`/${event.slug}`}
-                        key={event.id}
-                        className="group cursor-pointer block"
-                      >
-                        <div className="relative aspect-square overflow-hidden rounded-md mb-4 border border-border">
-                          <Image
-                            width={1000}
-                            height={1000}
-                            src={event.coverImage || DEFAULT_IMAGE}
-                            alt={event.title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    <Link
+                      href={`/${event.slug}`}
+                      key={event.id}
+                      className="group cursor-pointer block"
+                    >
+                      <div className="relative aspect-square overflow-hidden rounded-md mb-4 border border-border">
+                        <Image
+                          width={1000}
+                          height={1000}
+                          src={event.coverImage || DEFAULT_IMAGE}
+                          alt={event.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute bottom-4 left-4">
+                          <div className="bg-black/80 text-white rounded-md backdrop-blur-md px-3 py-1 text-[9px] font-medium uppercase border border-white/10">
+                            {new Date(event.date)
+                              .toLocaleDateString("en-NG", {
+                                weekday: "short",
+                                day: "numeric",
+                                month: "short",
+                              })
+                              .toUpperCase()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground uppercase">
+                            {event.category.replace(/_/g, " ")} •{" "}
+                            {event.city ?? event.venueName}
+                          </p>
+                          <IconTicket
+                            size={14}
+                            className="text-muted-foreground/50 group-hover:text-foreground transition-colors"
                           />
-                          <div className="absolute bottom-4 left-4">
-                            <div className="bg-black/80 backdrop-blur-md px-3 py-1 text-[9px] font-bold uppercase tracking-widest border border-white/10">
-                              {new Date(event.date)
-                                .toLocaleDateString("en-NG", {
-                                  weekday: "short",
-                                  day: "numeric",
-                                  month: "short",
-                                })
-                                .toUpperCase()}
-                            </div>
-                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground uppercase">
-                              {event.category.replace(/_/g, " ")} •{" "}
-                              {event.city ?? event.venueName}
-                            </p>
-                            <IconTicket
-                              size={14}
-                              className="text-muted-foreground/50 group-hover:text-foreground transition-colors"
-                            />
-                          </div>
-                          <h5 className="text-lg font-bold line-clamp-2 uppercase group-hover:underline decoration-white/20 underline-offset-4">
-                            {event.title}
-                          </h5>
-                        </div>
-                      </Link>
-                    ))}
+                        <h5 className="text-lg font-bold line-clamp-2 uppercase group-hover:underline decoration-white/20 underline-offset-4">
+                          {event.title}
+                        </h5>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
 
                 {hasMore && (

@@ -59,16 +59,12 @@ const AdminOrdersPage = () => {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-24 gap-3 text-muted-foreground">
               <IconLoader2 size={32} className="animate-spin opacity-20" />
-              <span className="text-xs uppercase tracking-widest">
-                Loading orders…
-              </span>
+              <span className="text-sm">Loading orders…</span>
             </div>
           ) : orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 gap-4 text-center text-muted-foreground">
               <IconReceipt size={40} stroke={1} />
-              <p className="text-xs uppercase tracking-widest">
-                No orders yet
-              </p>
+              <p className="text-xs uppercase tracking-widest">No orders yet</p>
             </div>
           ) : (
             <Table>

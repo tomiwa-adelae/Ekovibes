@@ -12,7 +12,14 @@ export type EventCategory =
   | 'SPORT'
   | 'OTHER';
 
-export type EventStatus = 'DRAFT' | 'LIVE' | 'SOLD_OUT' | 'CANCELLED' | 'ENDED';
+export type EventStatus =
+  | 'DRAFT'
+  | 'LIVE'
+  | 'SOLD_OUT'
+  | 'CANCELLED'
+  | 'ENDED'
+  | 'PENDING_REVIEW'
+  | 'REJECTED';
 
 export interface TicketTier {
   id: string;
@@ -39,6 +46,7 @@ export interface Event {
   city?: string;
   dressCode?: string;
   isMemberOnly: boolean;
+  rejectionReason?: string;
   ticketTiers: TicketTier[];
   totalCapacity?: number;
   totalSold?: number;
@@ -70,6 +78,7 @@ export interface AdminStats {
   totalTicketsSold: number;
   totalRevenue: number;
   totalOrders: number;
+  pendingReviewCount: number;
 }
 
 export interface Ticket {
@@ -225,6 +234,14 @@ export function updateEventStatus(
 
 export function deleteEvent(id: string): Promise<void> {
   return deleteData<void>(`/a/events/${id}`);
+}
+
+export function approveEvent(id: string): Promise<Event> {
+  return postData<Event>(`/a/events/${id}/approve`, {});
+}
+
+export function rejectEvent(id: string, reason: string): Promise<Event> {
+  return postData<Event>(`/a/events/${id}/reject`, { reason });
 }
 
 // ─── Orders & Tickets ──────────────────────────────────────────────────────────

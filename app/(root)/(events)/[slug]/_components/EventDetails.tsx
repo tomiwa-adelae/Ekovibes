@@ -113,7 +113,7 @@ const EventDetails = () => {
 
       const handler = window.PaystackPop.setup({
         key: env.NEXT_PUBLIC_PAYSTACK_KEY,
-        email: currentUser.email,
+        email: currentUser?.email,
         amount: order.total,
         ref: order.reference,
         metadata: { orderId: order.orderId },
@@ -175,6 +175,37 @@ const EventDetails = () => {
         </p>
         <Link href="/ticketing">
           <Button variant="outline">Browse Events</Button>
+        </Link>
+      </main>
+    );
+  }
+
+  const isMemberGated = event.isMemberOnly && user?.userTier === "standard";
+
+  if (isMemberGated) {
+    return (
+      <main className="pt-24 bg-background text-foreground min-h-screen flex flex-col items-center justify-center gap-6 px-4">
+        <IconLock size={40} className="text-muted-foreground" stroke={1} />
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">
+          Members Only
+        </p>
+        <h2 className="text-2xl font-bold uppercase text-center max-w-sm">
+          {event.title}
+        </h2>
+        <p className="text-sm text-muted-foreground text-center max-w-xs">
+          {user
+            ? "Your account does not have an active Ekovibe membership. Apply to unlock exclusive access."
+            : "This event is exclusive to Ekovibe members. Join to unlock access."}
+        </p>
+        <Link href={user ? "/membership" : "/register"}>
+          <Button size="lg">
+            {user ? "Apply for Membership" : "Become a Member"}
+          </Button>
+        </Link>
+        <Link href="/ticketing">
+          <Button variant="ghost" size="sm" className="text-muted-foreground">
+            ← Back to Events
+          </Button>
         </Link>
       </main>
     );
@@ -260,7 +291,7 @@ const EventDetails = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {event.isMemberOnly && !user ? (
+                {event.isMemberOnly && (!user || !user.userTier) ? (
                   <div className="text-center py-4 space-y-4">
                     <IconLock
                       size={32}
@@ -270,8 +301,15 @@ const EventDetails = () => {
                     <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
                       Member access required
                     </p>
-                    <Link href="/register">
-                      <Button className="w-full">Become a Member</Button>
+                    <p className="text-xs text-muted-foreground">
+                      {user
+                        ? "Your account does not have an active membership."
+                        : "This event is exclusive to Ekovibe members."}
+                    </p>
+                    <Link href={user ? "/membership" : "/register"}>
+                      <Button className="w-full">
+                        {user ? "Apply for Membership" : "Become a Member"}
+                      </Button>
                     </Link>
                   </div>
                 ) : allSoldOut ? (

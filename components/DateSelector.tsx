@@ -21,6 +21,14 @@ function formatDateDisplay(date?: Date) {
   });
 }
 
+// Use local date parts to avoid UTC offset shifting the date by one day
+function toLocalISODate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export function DateSelector({
   field,
   dateValue,
@@ -32,9 +40,13 @@ export function DateSelector({
   onChange?: (formatted: string) => void;
   disabled?: boolean;
 }) {
-  // Normalize incoming value (string OR date)
+  // Normalize incoming value (string OR date).
+  // Replace hyphens with slashes so "YYYY-MM-DD" is parsed as local time,
+  // not UTC — prevents the date displaying one day behind in UTC+ timezones.
   const initialDate =
-    typeof dateValue === "string" ? new Date(dateValue) : dateValue;
+    typeof dateValue === "string"
+      ? new Date(dateValue.replace(/-/g, "/"))
+      : dateValue;
 
   const [open, setOpen] = React.useState(false);
   const [date, setDate] = React.useState<Date | undefined>(initialDate);
@@ -58,7 +70,7 @@ export function DateSelector({
             setDate(parsed);
             setMonth(parsed);
 
-            const formattedIso = parsed.toISOString().split("T")[0];
+            const formattedIso = toLocalISODate(parsed);
 
             field?.onChange?.(formattedIso);
             onChange?.(formattedIso);
@@ -95,7 +107,7 @@ export function DateSelector({
               setValue(formatDateDisplay(selectedDate));
               setOpen(false);
 
-              const iso = selectedDate.toISOString().split("T")[0];
+              const iso = toLocalISODate(selectedDate);
 
               field?.onChange?.(iso);
               onChange?.(iso);

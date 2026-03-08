@@ -11,10 +11,11 @@ import {
   IconTicket,
   IconUsers,
   IconVideo,
+  IconWallet,
 } from "@tabler/icons-react";
 
 export const homeNavLinks = [
-  { label: "The Black Book", slug: "/reservations", comingSoon: true }, // Clubs, Restaurants
+  { label: "The Black Book", slug: "/reservations" }, // Clubs, Restaurants
   { label: "Experiences", slug: "/ticketing" }, // Events, Concerts
   { label: "The Vault", slug: "/shop", comingSoon: true }, // E-commerce/Merch
   { label: "Vibe Report", slug: "/media", comingSoon: true }, // Blog/Video content
@@ -22,7 +23,7 @@ export const homeNavLinks = [
 ];
 
 export const homeNavLinksMobile = [
-  { label: "The Black Book", slug: "/reservations", comingSoon: true }, // Clubs, Restaurants
+  { label: "The Black Book", slug: "/reservations" }, // Clubs, Restaurants
   { label: "Experiences", slug: "/ticketing" }, // Events, Concerts
   { label: "The Vault", slug: "/shop", comingSoon: true }, // E-commerce/Merch
   { label: "Vibe Report", slug: "/media", comingSoon: true }, // Blog/Video content
@@ -32,7 +33,7 @@ export const homeNavLinksMobile = [
 export const adminNavLinks = [
   // Core Management
   { label: "Dashboard", slug: "/a/dashboard", icon: IconLayoutDashboard },
-  { label: "Members", slug: "/a/members", icon: IconUsers, comingSoon: true }, // Verify Gold/Black tiers
+  { label: "Members", slug: "/a/membership", icon: IconUsers }, // Membership applications
 
   // The Black Book (Reservations)
   {
@@ -42,6 +43,9 @@ export const adminNavLinks = [
     comingSoon: true,
   },
   { label: "Venues", slug: "/a/venues", icon: IconBuilding, comingSoon: true },
+
+  // Vendors
+  { label: "Vendors", slug: "/a/vendors", icon: IconBuilding },
 
   // Experiences (Ticketing)
   { label: "Events", slug: "/a/events", icon: IconTicket },
@@ -74,7 +78,16 @@ export const adminNavLinks = [
   }, // Jet/Yacht/Protocol
 
   // System
+  { label: "Withdrawals", slug: "/a/withdrawals", icon: IconWallet },
   { label: "Financials", slug: "/a/finance", icon: IconCash, comingSoon: true },
+];
+
+export const vendorNavLinks = [
+  { label: "Dashboard", slug: "/vendor/dashboard", icon: IconLayoutDashboard },
+  { label: "My Events", slug: "/vendor/events", icon: IconTicket },
+  { label: "Wallet", slug: "/vendor/wallet", icon: IconWallet },
+  { label: "Scanner Mode", slug: "/vendor/scan", icon: IconQrcode },
+  { label: "Brand Profile", slug: "/vendor/settings", icon: IconSettings },
 ];
 
 export const memberNavLinks = [

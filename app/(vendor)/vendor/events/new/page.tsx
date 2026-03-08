@@ -24,34 +24,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  IconPhoto,
-  IconPlus,
-  IconTrash,
-  IconLoader2,
-  IconX,
-} from "@tabler/icons-react";
+import { IconPhoto, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { toast } from "sonner";
-import {
-  createEvent,
-  uploadEventCover,
-  toKobo,
-  CATEGORY_LABELS,
-  type EventCategory,
-} from "@/lib/events-api";
+import { createVendorEvent, uploadVendorEventCover } from "@/lib/vendor-api";
+import { toKobo, CATEGORY_LABELS, type EventCategory } from "@/lib/events-api";
 import { PageHeader } from "@/components/PageHeader";
 import { DateSelector } from "@/components/DateSelector";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader } from "@/components/Loader";
 
-// ── Zod Schemas per step ────────────────────────────────────────────────────
-
 const step1Schema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().optional(),
   category: z.string().min(1, "Please select a category"),
-  // coverImage is set programmatically after Cloudflare upload — just a plain string
   coverImage: z.string().optional(),
 });
 
@@ -87,9 +73,7 @@ const step3Schema = z.object({
   tiers: z.array(tierSchema).min(1, "At least one tier is required"),
 });
 
-const step4Schema = z.object({
-  isMemberOnly: z.boolean(),
-});
+const step4Schema = z.object({ isMemberOnly: z.boolean() });
 
 const fullSchema = z.object({
   ...step1Schema.shape,
@@ -100,30 +84,19 @@ const fullSchema = z.object({
 
 type FormData = z.infer<typeof fullSchema>;
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
 const STEP_LABELS = ["Identity & Vibe", "Logistics", "Access Tiers", "Review"];
-
 const INITIAL_TIERS = [
   { name: "Standard Access", description: "", priceNaira: "", quantity: "" },
   { name: "VIP Lounge", description: "", priceNaira: "", quantity: "" },
 ];
 
-const stepSchemas = [step1Schema, step2Schema, step3Schema, step4Schema];
-
-// ── Component ────────────────────────────────────────────────────────────────
-
-const CreateEventPage = () => {
+export default function VendorCreateEventPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-
-  // The actual File object to upload (not stored in form state)
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  // Blob URL for local preview before upload
   const [previewUrl, setPreviewUrl] = useState<string>("");
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormData>({
@@ -157,9 +130,7 @@ const CreateEventPage = () => {
       ["tiers"],
       ["isMemberOnly"],
     ];
-    // const valid = await form.trigger(stepFieldSets[step - 1] as any);
-    const fieldsToValidate = stepFieldSets[step - 1];
-    const valid = await form.trigger(fieldsToValidate);
+    const valid = await form.trigger(stepFieldSets[step - 1]);
     if (valid) setStep((s) => s + 1);
   };
 
@@ -173,7 +144,6 @@ const CreateEventPage = () => {
       toast.error("Image must be under 10 MB.");
       return;
     }
-    // Revoke previous blob URL to free memory
     if (previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
     setCoverFile(file);
     setPreviewUrl(URL.createObjectURL(file));
@@ -186,21 +156,20 @@ const CreateEventPage = () => {
     form.setValue("coverImage", "");
   };
 
-  const handleDeploy = async (asDraft = false) => {
+  const handleSubmit = async () => {
     const valid = await form.trigger();
     if (!valid) return;
-
     const values = form.getValues();
     setLoading(true);
     try {
-      // 1. Upload cover image to Cloudflare R2 if a file was selected
       let coverImageUrl: string | undefined = values.coverImage || undefined;
       if (coverFile) {
         toast.loading("Uploading cover image…", { id: "cover-upload" });
         try {
-          coverImageUrl = await uploadEventCover(coverFile);
+          coverImageUrl = await uploadVendorEventCover(coverFile);
           toast.dismiss("cover-upload");
-        } catch {
+        } catch (error: any) {
+          console.log(error);
           toast.dismiss("cover-upload");
           toast.error("Cover image upload failed. Try again.");
           setLoading(false);
@@ -208,8 +177,7 @@ const CreateEventPage = () => {
         }
       }
 
-      // 2. Create the event with the final Cloudflare URL
-      const payload = {
+      await createVendorEvent({
         title: values.title,
         description: values.description || undefined,
         category: values.category as EventCategory,
@@ -227,17 +195,12 @@ const CreateEventPage = () => {
           price: toKobo(Number(t.priceNaira)),
           quantity: Number(t.quantity),
         })),
-      };
+      });
 
-      const event = await createEvent(payload);
-
-      if (!asDraft) {
-        const { updateEventStatus } = await import("@/lib/events-api");
-        await updateEventStatus(event.id, "LIVE");
-      }
-
-      toast.success(`Event ${asDraft ? "saved as draft" : "deployed live"}!`);
-      router.push("/a/events");
+      toast.success(
+        "Event submitted for review! We'll notify you once it's approved.",
+      );
+      router.push("/vendor/events");
     } catch (e: any) {
       toast.error(e?.response?.data?.message ?? "Failed to create event");
     } finally {
@@ -245,7 +208,6 @@ const CreateEventPage = () => {
     }
   };
 
-  // The image source for preview: blob URL (pre-upload) or Cloudflare URL (if set)
   const imageSource = previewUrl || form.watch("coverImage");
 
   return (
@@ -258,7 +220,6 @@ const CreateEventPage = () => {
 
       <Form {...form}>
         <div className="space-y-6">
-          {/* ── STEP 1 ── */}
           {step === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
               <FormField
@@ -277,7 +238,6 @@ const CreateEventPage = () => {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="description"
@@ -295,13 +255,12 @@ const CreateEventPage = () => {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>The Vibe (Category) *</FormLabel>
+                    <FormLabel>Category *</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -323,8 +282,6 @@ const CreateEventPage = () => {
                   </FormItem>
                 )}
               />
-
-              {/* Cover image — controlled outside form state */}
               <div className="space-y-2">
                 <Label>Cover Image</Label>
                 {!imageSource ? (
@@ -359,7 +316,6 @@ const CreateEventPage = () => {
                   </div>
                 ) : (
                   <div className="relative group rounded-lg overflow-hidden border">
-                    {/* Use a plain <img> — blob URLs and Cloudflare URLs both work */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={imageSource}
@@ -387,18 +343,10 @@ const CreateEventPage = () => {
                     e.target.files?.[0] && handleFile(e.target.files[0])
                   }
                 />
-                {coverFile && (
-                  <p className="text-xs text-muted-foreground">
-                    {coverFile.name} ·{" "}
-                    {(coverFile.size / 1024 / 1024).toFixed(2)} MB · will upload
-                    on submit
-                  </p>
-                )}
               </div>
             </div>
           )}
 
-          {/* ── STEP 2 ── */}
           {step === 2 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -415,7 +363,6 @@ const CreateEventPage = () => {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="doorsOpen"
@@ -432,7 +379,6 @@ const CreateEventPage = () => {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="venueName"
@@ -449,7 +395,6 @@ const CreateEventPage = () => {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="venueAddress"
@@ -463,7 +408,6 @@ const CreateEventPage = () => {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="city"
@@ -477,7 +421,6 @@ const CreateEventPage = () => {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="dressCode"
@@ -498,7 +441,6 @@ const CreateEventPage = () => {
             </div>
           )}
 
-          {/* ── STEP 3 ── */}
           {step === 3 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="flex justify-between items-center">
@@ -519,13 +461,6 @@ const CreateEventPage = () => {
                   <IconPlus /> Add Tier
                 </Button>
               </div>
-
-              {form.formState.errors.tiers?.root && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.tiers.root.message}
-                </p>
-              )}
-
               <div className="space-y-4">
                 {fields.map((fieldItem, i) => (
                   <Card key={fieldItem.id} className="relative">
@@ -543,7 +478,6 @@ const CreateEventPage = () => {
                           </FormItem>
                         )}
                       />
-
                       <FormField
                         control={form.control}
                         name={`tiers.${i}.priceNaira`}
@@ -562,7 +496,6 @@ const CreateEventPage = () => {
                           </FormItem>
                         )}
                       />
-
                       <FormField
                         control={form.control}
                         name={`tiers.${i}.quantity`}
@@ -581,7 +514,6 @@ const CreateEventPage = () => {
                           </FormItem>
                         )}
                       />
-
                       <FormField
                         control={form.control}
                         name={`tiers.${i}.description`}
@@ -595,7 +527,6 @@ const CreateEventPage = () => {
                           </FormItem>
                         )}
                       />
-
                       {fields.length > 1 && (
                         <button
                           type="button"
@@ -612,7 +543,6 @@ const CreateEventPage = () => {
             </div>
           )}
 
-          {/* ── STEP 4 ── */}
           {step === 4 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
               <Card>
@@ -685,7 +615,6 @@ const CreateEventPage = () => {
                   </div>
                 </CardContent>
               </Card>
-
               <div className="pt-4 border-t">
                 <FormField
                   control={form.control}
@@ -701,7 +630,6 @@ const CreateEventPage = () => {
                       <FormLabel className="cursor-pointer">
                         Member-Only Access
                       </FormLabel>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -710,7 +638,6 @@ const CreateEventPage = () => {
           )}
         </div>
 
-        {/* ── Navigation ── */}
         <div className="flex justify-between mt-8">
           <Button
             type="button"
@@ -720,34 +647,17 @@ const CreateEventPage = () => {
           >
             Back
           </Button>
-
           {step < 4 ? (
             <Button type="button" onClick={handleNext}>
               Next Phase
             </Button>
           ) : (
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => handleDeploy(true)}
-                disabled={loading}
-              >
-                Save Draft
-              </Button>
-              <Button
-                type="button"
-                onClick={() => handleDeploy(false)}
-                disabled={loading}
-              >
-                {loading ? <Loader text="Deploying..." /> : "Live Deploy"}
-              </Button>
-            </div>
+            <Button type="button" onClick={handleSubmit} disabled={loading}>
+              {loading ? <Loader text="Submitting…" /> : "Submit for Review"}
+            </Button>
           )}
         </div>
       </Form>
     </main>
   );
-};
-
-export default CreateEventPage;
+}

@@ -8,6 +8,7 @@ import {
   IconDotsVertical,
   IconPlus,
   IconLoader2,
+  IconClockHour4,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -47,21 +48,26 @@ const DashboardPage = () => {
       label: "Total Revenue",
       value: stats ? formatNaira(stats.totalRevenue) : "—",
       icon: <IconCurrencyNaira size={20} />,
+      highlight: false,
     },
     {
       label: "Total Orders",
       value: stats ? String(stats.totalOrders) : "—",
       icon: <IconCalendarStats size={20} />,
+      highlight: false,
     },
     {
       label: "Tickets Sold",
       value: stats ? stats.totalTicketsSold.toLocaleString() : "—",
       icon: <IconTicket size={20} />,
+      highlight: false,
     },
     {
-      label: "Live Events",
-      value: stats ? String(stats.liveEvents) : "—",
-      icon: <IconUsers size={20} />,
+      label: "Pending Review",
+      value: stats ? String(stats.pendingReviewCount ?? 0) : "—",
+      icon: <IconClockHour4 size={20} />,
+      highlight: true,
+      href: "/a/events?status=PENDING_REVIEW",
     },
   ];
 
@@ -75,10 +81,19 @@ const DashboardPage = () => {
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-2">
         {statCards.map((stat, i) => (
-          <Card key={i}>
+          <Card
+            key={i}
+            className={
+              stat.highlight && stats && (stats.pendingReviewCount ?? 0) > 0
+                ? "border-yellow-500/40"
+                : ""
+            }
+          >
             <CardContent>
               <div className="flex justify-between items-start mb-4">
-                <div className="p-2 bg-muted rounded-md text-muted-foreground">
+                <div
+                  className={`p-2 rounded-md ${stat.highlight && stats && (stats.pendingReviewCount ?? 0) > 0 ? "bg-yellow-500/15 text-yellow-500" : "bg-muted text-muted-foreground"}`}
+                >
                   {stat.icon}
                 </div>
                 {loading && (
@@ -92,9 +107,22 @@ const DashboardPage = () => {
                 <CardDescription className="text-muted-foreground mb-1">
                   {stat.label}
                 </CardDescription>
-                <h4 className="text-2xl font-bold tracking-tight">
+                <h4
+                  className={`text-2xl font-bold tracking-tight ${stat.highlight && stats && (stats.pendingReviewCount ?? 0) > 0 ? "text-yellow-500" : ""}`}
+                >
                   {stat.value}
                 </h4>
+                {stat.highlight &&
+                  stats &&
+                  (stats.pendingReviewCount ?? 0) > 0 && (
+                    <Link
+                      href="/a/events"
+                      onClick={() => {}}
+                      className="text-[10px] text-yellow-500 underline underline-offset-2"
+                    >
+                      Review now →
+                    </Link>
+                  )}
               </div>
             </CardContent>
           </Card>
@@ -105,7 +133,7 @@ const DashboardPage = () => {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Recent Events */}
         <div className="xl:col-span-2">
-          <Card>
+          <Card className="gap-1">
             <CardHeader className="border-b">
               <CardTitle>Recent Events</CardTitle>
             </CardHeader>
@@ -230,11 +258,16 @@ const DashboardPage = () => {
                         label: "Tickets Sold",
                         value: stats.totalTicketsSold.toLocaleString(),
                       },
+                      {
+                        label: "Pending Review",
+                        value: stats.pendingReviewCount ?? 0,
+                        warn: true,
+                      },
                     ].map((s) => (
                       <div key={s.label} className="flex justify-between">
                         <span className="text-muted-foreground">{s.label}</span>
                         <span
-                          className={`font-bold ${s.highlight ? "text-green-500" : ""}`}
+                          className={`font-bold ${s.highlight ? "text-green-500" : (s as any).warn && Number(s.value) > 0 ? "text-yellow-500" : ""}`}
                         >
                           {s.value}
                         </span>

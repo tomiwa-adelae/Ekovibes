@@ -36,7 +36,7 @@ export const EventCard = ({ event }: { event: Event }) => {
             <p className="text-[10px] uppercase tracking-[0.3em] font-bold mb-4">
               Membership Required
             </p>
-            <Link href="/register">
+            <Link href="/membership">
               <Button variant="outline">Unlock Access</Button>
             </Link>
           </div>

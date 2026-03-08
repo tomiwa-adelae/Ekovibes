@@ -19,7 +19,9 @@ export type User = {
   gender: string | null;
   role: string;
   userTier?: string | null;
+  onboardingCompleted?: boolean;
   isAdmin?: boolean;
+  isVendor?: boolean;
 } | null;
 
 type AuthState = {

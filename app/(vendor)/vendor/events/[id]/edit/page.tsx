@@ -22,12 +22,15 @@ import {
   IconAlertCircle,
   IconPhoto,
   IconX,
+  IconMessageReport,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import {
-  getAdminEventById,
-  updateEvent,
-  uploadEventCover,
+  getVendorEventById,
+  updateVendorEvent,
+  uploadVendorEventCover,
+} from "@/lib/vendor-api";
+import {
   toKobo,
   CATEGORY_LABELS,
   type EventCategory,
@@ -38,7 +41,7 @@ import { DateSelector } from "@/components/DateSelector";
 import { Loader } from "@/components/Loader";
 
 interface TierForm {
-  id?: string; // undefined for newly-added tiers
+  id?: string;
   name: string;
   description: string;
   priceNaira: string;
@@ -58,11 +61,13 @@ interface FormState {
   dressCode: string;
   isMemberOnly: boolean;
   tiers: TierForm[];
+  status: string;
+  rejectionReason?: string;
 }
 
 const STEP_LABELS = ["Identity & Vibe", "Logistics", "Access Tiers", "Review"];
 
-const EditEventPage = () => {
+export default function VendorEditEventPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -71,15 +76,13 @@ const EditEventPage = () => {
   const [fetchError, setFetchError] = useState(false);
   const [form, setForm] = useState<FormState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!id) return;
-    getAdminEventById(id)
+    getVendorEventById(id)
       .then((event: AdminEventWithStats) => {
         setForm({
           title: event.title,
@@ -93,6 +96,8 @@ const EditEventPage = () => {
           city: event.city ?? "",
           dressCode: event.dressCode ?? "",
           isMemberOnly: event.isMemberOnly,
+          status: event.status,
+          rejectionReason: event.rejectionReason,
           tiers: event.ticketTiers.map((t) => ({
             id: t.id,
             name: t.name,
@@ -183,7 +188,7 @@ const EditEventPage = () => {
       if (coverFile) {
         toast.loading("Uploading cover image…", { id: "cover-upload" });
         try {
-          coverImageUrl = await uploadEventCover(coverFile);
+          coverImageUrl = await uploadVendorEventCover(coverFile);
           toast.dismiss("cover-upload");
         } catch {
           toast.dismiss("cover-upload");
@@ -193,7 +198,7 @@ const EditEventPage = () => {
         }
       }
 
-      await updateEvent(id, {
+      await updateVendorEvent(id, {
         title: form.title,
         description: form.description || undefined,
         category: form.category,
@@ -214,7 +219,7 @@ const EditEventPage = () => {
         })),
       });
       toast.success("Event updated");
-      router.push(`/a/events/${id}`);
+      router.push(`/vendor/events/${id}`);
     } catch (e: any) {
       toast.error(e?.response?.data?.message ?? "Failed to update event");
     } finally {
@@ -228,8 +233,26 @@ const EditEventPage = () => {
     <main>
       <PageHeader back title="Edit Event" description={STEP_LABELS[step - 1]} />
 
+      {/* Rejection reason banner — shown when vendor is fixing a rejected event */}
+      {form.status === "REJECTED" && (
+        <div className="rounded-lg border mb-4 border-red-500/30 bg-red-500/5 p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <IconMessageReport size={16} className="text-red-400 shrink-0" />
+            <p className="text-xs font-semibold uppercase text-red-400">
+              Action Required
+            </p>
+          </div>
+          {form.rejectionReason && (
+            <p className="text-sm text-foreground/80">{form.rejectionReason}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Fix the issues above and save — your event will be automatically
+            resubmitted for review.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-6">
-        {/* ── STEP 1 ── */}
         {step === 1 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="space-y-2">
@@ -240,7 +263,6 @@ const EditEventPage = () => {
                 placeholder="e.g. Wizkid Live at Landmark"
               />
             </div>
-
             <div className="space-y-2">
               <Label>Description</Label>
               <Textarea
@@ -250,9 +272,8 @@ const EditEventPage = () => {
                 placeholder="Describe the experience..."
               />
             </div>
-
             <div className="space-y-2">
-              <Label>The Vibe (Category) *</Label>
+              <Label>Category *</Label>
               <Select
                 value={form.category}
                 onValueChange={(v) => set("category", v as EventCategory)}
@@ -269,8 +290,6 @@ const EditEventPage = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Cover Image */}
             <div className="space-y-2">
               <Label>Cover Image</Label>
               {!imageSource ? (
@@ -286,11 +305,7 @@ const EditEventPage = () => {
                     const file = e.dataTransfer.files?.[0];
                     if (file) handleFile(file);
                   }}
-                  className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${
-                    isDragging
-                      ? "border-primary bg-primary/5"
-                      : "border-muted-foreground/20 bg-muted/30"
-                  }`}
+                  className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/20 bg-muted/30"}`}
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <div className="flex flex-col items-center gap-2">
@@ -340,17 +355,10 @@ const EditEventPage = () => {
                   e.target.files?.[0] && handleFile(e.target.files[0])
                 }
               />
-              {coverFile && (
-                <p className="text-xs text-muted-foreground">
-                  {coverFile.name} · {(coverFile.size / 1024 / 1024).toFixed(2)}{" "}
-                  MB · will upload on save
-                </p>
-              )}
             </div>
           </div>
         )}
 
-        {/* ── STEP 2 ── */}
         {step === 2 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -361,7 +369,6 @@ const EditEventPage = () => {
                   onChange={(v) => set("date", v)}
                 />
               </div>
-
               <div className="space-y-2">
                 <Label>Doors Open *</Label>
                 <TimeInput
@@ -402,7 +409,6 @@ const EditEventPage = () => {
           </div>
         )}
 
-        {/* ── STEP 3 ── */}
         {step === 3 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="flex justify-between items-center">
@@ -416,7 +422,6 @@ const EditEventPage = () => {
                 <IconPlus /> Add Tier
               </Button>
             </div>
-
             <div className="space-y-4">
               {form.tiers.map((tier, i) => (
                 <Card key={i} className="relative">
@@ -461,7 +466,6 @@ const EditEventPage = () => {
                         }
                       />
                     </div>
-
                     {form.tiers.length > 1 && (
                       <button
                         type="button"
@@ -478,7 +482,6 @@ const EditEventPage = () => {
           </div>
         )}
 
-        {/* ── STEP 4 ── */}
         {step === 4 && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
             <Card>
@@ -545,7 +548,6 @@ const EditEventPage = () => {
                 </div>
               </CardContent>
             </Card>
-
             <div className="pt-4 border-t">
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -562,7 +564,6 @@ const EditEventPage = () => {
         )}
       </div>
 
-      {/* ── Navigation ── */}
       <div className="flex justify-between mt-8">
         <Button
           type="button"
@@ -572,19 +573,26 @@ const EditEventPage = () => {
         >
           Back
         </Button>
-
         {step < 4 ? (
           <Button type="button" onClick={() => setStep((s) => s + 1)}>
             Next Phase
           </Button>
         ) : (
           <Button type="button" onClick={handleSave} disabled={loading}>
-            {loading ? <Loader text="Saving..." /> : "Save Changes"}
+            {loading ? (
+              <Loader
+                text={
+                  form.status === "REJECTED" ? "Resubmitting…" : "Saving..."
+                }
+              />
+            ) : form.status === "REJECTED" ? (
+              "Save & Resubmit for Review"
+            ) : (
+              "Save Changes"
+            )}
           </Button>
         )}
       </div>
     </main>
   );
-};
-
-export default EditEventPage;
+}

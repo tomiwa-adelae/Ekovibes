@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,15 +12,19 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   IconMusic,
   IconGlassFull,
   IconPalette,
-  IconCheck,
-  IconChevronRight,
   IconSparkles,
+  IconUsers,
+  IconBuildingStore,
+  IconCheck,
 } from "@tabler/icons-react";
 import {
   Card,
@@ -30,8 +34,11 @@ import {
 } from "@/components/ui/card";
 import { Logo } from "@/components/Logo";
 import Link from "next/link";
-import { Field, FieldContent } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { postData } from "@/lib/api";
+import { useAuth } from "@/store/useAuth";
+import { Loader } from "@/components/Loader";
 
 const VIBE_OPTIONS = [
   { id: "nightlife", label: "Nightlife", icon: <IconGlassFull size={20} /> },
@@ -54,17 +61,37 @@ const channelSchema = z.object({
   sms: z.boolean(),
 });
 
+const vendorSchema = z.object({
+  brandName: z.string().min(2, "Brand name must be at least 2 characters"),
+  brandBio: z.string().optional(),
+  website: z.string().optional(),
+  instagram: z.string().optional(),
+});
+
 type ChannelValues = z.infer<typeof channelSchema>;
+type VendorValues = z.infer<typeof vendorSchema>;
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
+  const { setUser } = useAuth();
+  const [pending, startTransition] = useTransition();
+
+  // Step logic:
+  // USER path:   0 (choose type) → 1 (vibes) → 2 (channels) → 3 (done)
+  // VENDOR path: 0 (choose type) → 1 (brand info) → 2 (event vibes) → 3 (done)
+  const [step, setStep] = useState(0);
+  const [accountType, setAccountType] = useState<"user" | "vendor" | null>(null);
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [vibeError, setVibeError] = useState(false);
 
   const channelForm = useForm<ChannelValues>({
     resolver: zodResolver(channelSchema),
     defaultValues: { whatsapp: true, email: true, sms: false },
+  });
+
+  const vendorForm = useForm<VendorValues>({
+    resolver: zodResolver(vendorSchema),
+    defaultValues: { brandName: "", brandBio: "", website: "", instagram: "" },
   });
 
   const toggleVibe = (id: string) => {
@@ -74,11 +101,27 @@ export default function OnboardingPage() {
     );
   };
 
-  const handleNext = () => {
-    if (step === 1) {
+  const handleTypeSelect = (type: "user" | "vendor") => {
+    setAccountType(type);
+    setStep(1);
+  };
+
+  const handleNext = async () => {
+    if (accountType === "vendor" && step === 1) {
+      const valid = await vendorForm.trigger();
+      if (!valid) return;
+    }
+    if (accountType === "user" && step === 1) {
       if (selectedVibes.length === 0) {
         setVibeError(true);
         toast.error("Select at least one vibe to continue");
+        return;
+      }
+    }
+    if (accountType === "vendor" && step === 2) {
+      if (selectedVibes.length === 0) {
+        setVibeError(true);
+        toast.error("Select at least one category to continue");
         return;
       }
     }
@@ -86,13 +129,89 @@ export default function OnboardingPage() {
   };
 
   const handleFinish = () => {
-    router.push("/dashboard");
+    startTransition(async () => {
+      try {
+        const payload =
+          accountType === "vendor"
+            ? {
+                accountType: "vendor" as const,
+                interests: selectedVibes,
+                ...vendorForm.getValues(),
+              }
+            : {
+                accountType: "user" as const,
+                interests: selectedVibes,
+              };
+
+        const updatedUser = await postData<any>("/auth/onboarding", payload);
+        setUser(updatedUser);
+
+        if (accountType === "vendor") {
+          router.push("/vendor/dashboard");
+        } else {
+          router.push("/dashboard");
+        }
+      } catch {
+        toast.error("Something went wrong. Please try again.");
+      }
+    });
   };
 
   return (
     <Card className="border-none shadow-2xl overflow-hidden bg-white dark:bg-card">
       <CardContent>
-        {step === 1 && (
+        {/* ── STEP 0: CHOOSE ACCOUNT TYPE ── */}
+        {step === 0 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <CardHeader className="flex flex-col text-center items-center pt-4">
+              <Link
+                href="/"
+                className="flex items-center hover:text-primary text-slate-900 mb-1.5"
+              >
+                <Logo type="green" size="h-10" />
+              </Link>
+              <CardDescription>How will you be using Ekovibe?</CardDescription>
+            </CardHeader>
+            <div className="mt-6 grid grid-cols-1 gap-3 mb-4">
+              <Card
+                onClick={() => handleTypeSelect("user")}
+                className="cursor-pointer border-border hover:border-foreground/40 transition-all"
+              >
+                <CardContent className="flex items-center gap-4 p-5">
+                  <div className="size-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <IconUsers size={20} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">I&apos;m an Attendee</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Discover events, buy tickets, and access exclusive experiences
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card
+                onClick={() => handleTypeSelect("vendor")}
+                className="cursor-pointer border-border hover:border-primary/60 hover:bg-primary/5 transition-all"
+              >
+                <CardContent className="flex items-center gap-4 p-5">
+                  <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <IconBuildingStore size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">I&apos;m an Event Organizer</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Create events, manage tickets, and track your revenue
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* ── USER PATH: STEP 1 — SELECT VIBES ── */}
+        {accountType === "user" && step === 1 && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <CardHeader className="flex flex-col text-center items-center pt-4">
               <Link
@@ -112,22 +231,17 @@ export default function OnboardingPage() {
                   <Card
                     key={vibe.id}
                     onClick={() => toggleVibe(vibe.id)}
-                    className={`cursor-pointer transition-all ${
+                    className={cn(
+                      "cursor-pointer transition-all",
                       selected
                         ? "border-primary"
                         : vibeError
-                          ? "border-primary"
-                          : "border-border hover:border-foreground/30"
-                    }`}
+                          ? "border-destructive/50"
+                          : "border-border hover:border-foreground/30",
+                    )}
                   >
                     <CardContent className="flex flex-col items-center justify-center gap-4 text-center">
-                      <div
-                        className={
-                          selected
-                            ? "text-foreground"
-                            : "text-muted-foreground/50"
-                        }
-                      >
+                      <div className={selected ? "text-foreground" : "text-muted-foreground/50"}>
                         {vibe.icon}
                       </div>
                       <span className="text-[10px] font-bold uppercase tracking-widest">
@@ -138,17 +252,16 @@ export default function OnboardingPage() {
                 );
               })}
             </div>
-
             {vibeError && (
-              <p className="text-[9px] text-red-400 uppercase tracking-widest text-center mb-8">
+              <p className="text-[9px] text-red-400 uppercase tracking-widest text-center mb-4">
                 Select at least one vibe
               </p>
             )}
           </div>
         )}
 
-        {/* STEP 2: CONCIERGE CHANNELS */}
-        {step === 2 && (
+        {/* ── USER PATH: STEP 2 — NOTIFICATION CHANNELS ── */}
+        {accountType === "user" && step === 2 && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <CardHeader className="flex flex-col mb-8 text-center items-center pt-4">
               <Link
@@ -161,7 +274,6 @@ export default function OnboardingPage() {
                 How should we notify you of secret drops and table openings?
               </CardDescription>
             </CardHeader>
-
             <Form {...channelForm}>
               <div className="space-y-3 mb-6">
                 {CHANNELS.map(({ id, label }) => (
@@ -171,28 +283,21 @@ export default function OnboardingPage() {
                     name={id as ChannelId}
                     render={({ field }) => (
                       <FormItem>
-                        {/* Using 'asChild' on FormLabel or simply using a <label> 
-                   tag allows the entire box to focus the checkbox 
-                */}
                         <Label
                           htmlFor={id}
                           className="flex items-center justify-between p-4 bg-card border rounded-md border-border hover:border-foreground/30 transition-colors cursor-pointer"
                         >
-                          <FieldContent className="space-y-1">
-                            <span className="text-sm font-semibold">
-                              {label}
-                            </span>
+                          <div className="space-y-1">
+                            <span className="text-sm font-semibold">{label}</span>
                             <p className="text-xs text-muted-foreground">
                               Priority {id} notifications
                             </p>
-                          </FieldContent>
-
+                          </div>
                           <FormControl>
                             <Checkbox
-                              id={id} // CRITICAL: This must match the 'htmlFor' above
+                              id={id}
                               checked={field.value}
                               onCheckedChange={field.onChange}
-                              // className="border-border data-[state=checked]:bg-foreground data-[state=checked]:text-background rounded-none w-5 h-5"
                             />
                           </FormControl>
                         </Label>
@@ -205,10 +310,10 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* STEP 3: SUCCESS */}
-        {step === 3 && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 text-center">
-            <CardHeader className="flex flex-col mb-8 text-center items-center pt-4">
+        {/* ── VENDOR PATH: STEP 1 — BRAND INFO ── */}
+        {accountType === "vendor" && step === 1 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <CardHeader className="flex flex-col text-center items-center pt-4">
               <Link
                 href="/"
                 className="flex items-center hover:text-primary text-slate-900 mb-1.5"
@@ -216,32 +321,176 @@ export default function OnboardingPage() {
                 <Logo type="green" size="h-10" />
               </Link>
               <CardDescription>
-                Your Ekovibe identity is now live. We&apos;ve curated your first
-                &ldquo;Vibe Report&rdquo; based on your interests.
+                Tell us about your brand or organization.
+              </CardDescription>
+            </CardHeader>
+            <Form {...vendorForm}>
+              <div className="mt-4 space-y-4 mb-4">
+                <FormField
+                  control={vendorForm.control}
+                  name="brandName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Brand / Organization Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Lagos Nights Co." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={vendorForm.control}
+                  name="brandBio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bio</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          rows={3}
+                          placeholder="What kind of events do you organize?"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={vendorForm.control}
+                    name="instagram"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Instagram</FormLabel>
+                        <FormControl>
+                          <Input placeholder="@yourbrand" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={vendorForm.control}
+                    name="website"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Website</FormLabel>
+                        <FormControl>
+                          <Input placeholder="yourbrand.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </Form>
+          </div>
+        )}
+
+        {/* ── VENDOR PATH: STEP 2 — EVENT CATEGORIES ── */}
+        {accountType === "vendor" && step === 2 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <CardHeader className="flex flex-col text-center items-center pt-4">
+              <Link
+                href="/"
+                className="flex items-center hover:text-primary text-slate-900 mb-1.5"
+              >
+                <Logo type="green" size="h-10" />
+              </Link>
+              <CardDescription>
+                What types of events do you typically organize?
+              </CardDescription>
+            </CardHeader>
+            <div className="mt-8 grid grid-cols-2 gap-2 mb-4">
+              {VIBE_OPTIONS.map((vibe) => {
+                const selected = selectedVibes.includes(vibe.id);
+                return (
+                  <Card
+                    key={vibe.id}
+                    onClick={() => toggleVibe(vibe.id)}
+                    className={cn(
+                      "cursor-pointer transition-all",
+                      selected
+                        ? "border-primary"
+                        : vibeError
+                          ? "border-destructive/50"
+                          : "border-border hover:border-foreground/30",
+                    )}
+                  >
+                    <CardContent className="flex flex-col items-center justify-center gap-4 text-center">
+                      <div className={selected ? "text-foreground" : "text-muted-foreground/50"}>
+                        {vibe.icon}
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest">
+                        {vibe.label}
+                      </span>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+            {vibeError && (
+              <p className="text-[9px] text-red-400 uppercase tracking-widest text-center mb-4">
+                Select at least one category
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 3: SUCCESS ── */}
+        {step === 3 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 text-center">
+            <CardHeader className="flex flex-col mb-4 text-center items-center pt-4">
+              <Link
+                href="/"
+                className="flex items-center hover:text-primary text-slate-900 mb-1.5"
+              >
+                <Logo type="green" size="h-10" />
+              </Link>
+              <div className="size-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto my-4">
+                <IconCheck size={28} className="text-primary" />
+              </div>
+              <CardDescription>
+                {accountType === "vendor"
+                  ? "Your organizer profile is live. Head to your dashboard to create your first event."
+                  : "Your Ekovibe identity is now live. We've curated your first Vibe Report based on your interests."}
               </CardDescription>
             </CardHeader>
           </div>
         )}
 
-        {/* Navigation */}
+        {/* ── Navigation ── */}
         <div className="flex flex-col gap-4">
-          {step < 3 ? (
+          {step > 0 && step < 3 && (
             <Button type="button" onClick={handleNext} className="w-full">
               Continue
             </Button>
-          ) : (
-            <Button type="button" onClick={handleFinish} className="w-full">
-              Enter the Ecosystem
+          )}
+          {step === 3 && (
+            <Button
+              type="button"
+              onClick={handleFinish}
+              disabled={pending}
+              className="w-full"
+            >
+              {pending ? (
+                <Loader text="Setting up..." />
+              ) : accountType === "vendor" ? (
+                "Go to My Dashboard"
+              ) : (
+                "Enter the Ecosystem"
+              )}
             </Button>
           )}
-
           {step === 1 && (
             <button
               type="button"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => setStep(0)}
               className="text-xs text-muted-foreground hover:underline"
             >
-              Skip for now
+              Back
             </button>
           )}
         </div>

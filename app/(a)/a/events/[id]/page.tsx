@@ -8,19 +8,24 @@ import {
   IconLoader2,
   IconAlertCircle,
   IconCalendar,
-  IconMapPin,
   IconTicket,
   IconCurrencyNaira,
-  IconArrowLeft,
   IconPencil,
+  IconCheck,
+  IconX,
+  IconClockHour4,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   getAdminEventById,
+  approveEvent,
+  rejectEvent,
   formatNaira,
   type AdminEventWithStats,
   type EventStatus,
 } from "@/lib/events-api";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -43,6 +48,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { NairaIcon } from "@/components/NairaIcon";
+import { Label } from "@/components/ui/label";
 
 const STATUS_STYLES: Record<EventStatus, string> = {
   LIVE: "bg-green-500/10 text-green-500",
@@ -50,6 +56,8 @@ const STATUS_STYLES: Record<EventStatus, string> = {
   DRAFT: "bg-muted text-muted-foreground",
   CANCELLED: "bg-orange-500/10 text-orange-500",
   ENDED: "bg-muted text-muted-foreground",
+  PENDING_REVIEW: "bg-yellow-500/10 text-yellow-500",
+  REJECTED: "bg-red-500/10 text-red-400",
 };
 
 const AdminEventDetailPage = () => {
@@ -57,6 +65,9 @@ const AdminEventDetailPage = () => {
   const [event, setEvent] = useState<AdminEventWithStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -79,18 +90,53 @@ const AdminEventDetailPage = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-64 gap-4 text-muted-foreground">
         <IconAlertCircle size={32} stroke={1} />
-        <p className="text-xs uppercase tracking-widest">Event not found</p>
+        <p className="text-sm">Event not found</p>
         <Link href="/a/events">
-          <Button
-            variant="outline"
-            className="rounded-none border-border text-[10px] uppercase tracking-widest"
-          >
-            Back to Events
-          </Button>
+          <Button variant="outline">Back to Events</Button>
         </Link>
       </div>
     );
   }
+
+  const handleApprove = async () => {
+    setReviewLoading(true);
+    try {
+      const updated = await approveEvent(id);
+      setEvent((prev) => (prev ? { ...prev, status: updated.status } : prev));
+      toast.success("Event approved and is now live.");
+    } catch {
+      toast.error("Failed to approve event");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectionReason.trim()) {
+      toast.error("Please enter a rejection reason.");
+      return;
+    }
+    setReviewLoading(true);
+    try {
+      const updated = await rejectEvent(id, rejectionReason.trim());
+      setEvent((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: updated.status,
+              rejectionReason: rejectionReason.trim(),
+            }
+          : prev,
+      );
+      setShowRejectForm(false);
+      setRejectionReason("");
+      toast.success("Event rejected. Vendor has been notified.");
+    } catch {
+      toast.error("Failed to reject event");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
 
   const soldPct =
     event.totalCapacity > 0
@@ -130,6 +176,78 @@ const AdminEventDetailPage = () => {
           </Button>
         </div>
       </div>
+
+      {/* Review Panel — only shown for PENDING_REVIEW events */}
+      {event.status === "PENDING_REVIEW" && (
+        <Card className="border-yellow-500/40 bg-yellow-500/5">
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-yellow-500/15">
+                <IconClockHour4 size={18} className="text-yellow-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Pending Review</p>
+                <p className="text-xs text-muted-foreground">
+                  This event was submitted by a vendor and is awaiting your
+                  approval.
+                </p>
+              </div>
+            </div>
+
+            {!showRejectForm ? (
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleApprove}
+                  disabled={reviewLoading}
+                  className="bg-green-500 hover:bg-green-600 text-white flex-1"
+                >
+                  <IconCheck size={16} className="mr-1" />
+                  {reviewLoading ? "Approving…" : "Approve Event"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowRejectForm(true)}
+                  disabled={reviewLoading}
+                  className="border-red-500/40 text-red-400 hover:bg-red-500/10 flex-1"
+                >
+                  <IconX size={16} className="mr-1" /> Reject
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Label>Rejection Reason</Label>
+                <Textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Explain what needs to be fixed so the vendor can resubmit…"
+                  rows={3}
+                  className="text-sm"
+                />
+                <div className="flex gap-3">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setShowRejectForm(false);
+                      setRejectionReason("");
+                    }}
+                    disabled={reviewLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleReject}
+                    disabled={reviewLoading || !rejectionReason.trim()}
+                    className="bg-red-500 hover:bg-red-600 text-white"
+                  >
+                    <IconX size={16} className="mr-1" />
+                    {reviewLoading ? "Rejecting…" : "Send Rejection"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 2xl:grid-cols-4 gap-2">
