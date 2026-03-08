@@ -158,21 +158,23 @@ export default function AdminVenuesPage() {
     }
   };
 
-  const f = (key: keyof VenueForm) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => setForm((p) => ({ ...p, [key]: e.target.value }));
+  const f =
+    (key: keyof VenueForm) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((p) => ({ ...p, [key]: e.target.value }));
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Venues"
-        description="Manage The Black Book — restaurants, clubs, and dining venues."
-        actions={
-          <Button size="sm" onClick={openCreate}>
-            <IconPlus size={14} className="mr-1" /> Add Venue
-          </Button>
-        }
-      />
+      <div className="flex items-start justify-between gap-2 md:flex-row flex-col md:items-center">
+        <PageHeader
+          title="Venues"
+          description="Manage The Black Book — restaurants, clubs, and dining venues."
+        />
+
+        <Button size="sm" onClick={openCreate}>
+          <IconPlus size={14} className="mr-1" /> Add Venue
+        </Button>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-40">
@@ -181,7 +183,9 @@ export default function AdminVenuesPage() {
       ) : venues.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center gap-3 border rounded-xl">
           <IconBuilding size={36} className="text-muted-foreground/30" />
-          <p className="text-muted-foreground text-sm">No venues yet. Add one to get started.</p>
+          <p className="text-muted-foreground text-sm">
+            No venues yet. Add one to get started.
+          </p>
           <Button size="sm" onClick={openCreate}>
             <IconPlus size={14} className="mr-1" /> Add Venue
           </Button>
@@ -202,13 +206,19 @@ export default function AdminVenuesPage() {
                 />
               ) : (
                 <div className="w-full aspect-video bg-muted flex items-center justify-center">
-                  <IconBuilding size={32} className="text-muted-foreground/30" />
+                  <IconBuilding
+                    size={32}
+                    className="text-muted-foreground/30"
+                  />
                 </div>
               )}
               <div className="p-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-bold text-sm">{venue.name}</h3>
-                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider shrink-0">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] uppercase tracking-wider shrink-0"
+                  >
                     {VENUE_TYPE_LABELS[venue.type]}
                   </Badge>
                 </div>
@@ -238,7 +248,10 @@ export default function AdminVenuesPage() {
                     {venue.isActive ? (
                       <IconToggleRight size={16} className="text-green-500" />
                     ) : (
-                      <IconToggleLeft size={16} className="text-muted-foreground" />
+                      <IconToggleLeft
+                        size={16}
+                        className="text-muted-foreground"
+                      />
                     )}
                   </Button>
                 </div>
@@ -257,13 +270,19 @@ export default function AdminVenuesPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2 space-y-1.5">
                 <label className="text-sm font-medium">Venue Name</label>
-                <Input value={form.name} onChange={f("name")} placeholder="e.g. Nok by Alara" />
+                <Input
+                  value={form.name}
+                  onChange={f("name")}
+                  placeholder="e.g. Nok by Alara"
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Type</label>
                 <Select
                   value={form.type}
-                  onValueChange={(v) => setForm((p) => ({ ...p, type: v as VenueType }))}
+                  onValueChange={(v) =>
+                    setForm((p) => ({ ...p, type: v as VenueType }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -279,17 +298,27 @@ export default function AdminVenuesPage() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">City</label>
-                <Input value={form.city} onChange={f("city")} placeholder="Lagos" />
+                <Input
+                  value={form.city}
+                  onChange={f("city")}
+                  placeholder="Lagos"
+                />
               </div>
               <div className="col-span-2 space-y-1.5">
                 <label className="text-sm font-medium">Address</label>
-                <Input value={form.address} onChange={f("address")} placeholder="12 Adeola Odeku, Victoria Island" />
+                <Input
+                  value={form.address}
+                  onChange={f("address")}
+                  placeholder="12 Adeola Odeku, Victoria Island"
+                />
               </div>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">
                 Description{" "}
-                <span className="text-muted-foreground font-normal">(optional)</span>
+                <span className="text-muted-foreground font-normal">
+                  (optional)
+                </span>
               </label>
               <Textarea
                 value={form.description}
@@ -301,7 +330,9 @@ export default function AdminVenuesPage() {
             <div className="space-y-1.5">
               <label className="text-sm font-medium">
                 Cover Image URL{" "}
-                <span className="text-muted-foreground font-normal">(optional)</span>
+                <span className="text-muted-foreground font-normal">
+                  (optional)
+                </span>
               </label>
               <Input
                 value={form.coverImage}
@@ -313,16 +344,28 @@ export default function AdminVenuesPage() {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">
                   Instagram{" "}
-                  <span className="text-muted-foreground font-normal">(optional)</span>
+                  <span className="text-muted-foreground font-normal">
+                    (optional)
+                  </span>
                 </label>
-                <Input value={form.instagram} onChange={f("instagram")} placeholder="@handle" />
+                <Input
+                  value={form.instagram}
+                  onChange={f("instagram")}
+                  placeholder="@handle"
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">
                   Website{" "}
-                  <span className="text-muted-foreground font-normal">(optional)</span>
+                  <span className="text-muted-foreground font-normal">
+                    (optional)
+                  </span>
                 </label>
-                <Input value={form.website} onChange={f("website")} placeholder="https://…" />
+                <Input
+                  value={form.website}
+                  onChange={f("website")}
+                  placeholder="https://…"
+                />
               </div>
             </div>
           </div>
@@ -331,7 +374,9 @@ export default function AdminVenuesPage() {
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving && <IconLoader2 size={14} className="animate-spin mr-1" />}
+              {saving && (
+                <IconLoader2 size={14} className="animate-spin mr-1" />
+              )}
               {editing ? "Save Changes" : "Create Venue"}
             </Button>
           </DialogFooter>
