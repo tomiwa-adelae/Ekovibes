@@ -18,7 +18,7 @@ export const homeNavLinks = [
   { label: "The Black Book", slug: "/reservations" }, // Clubs, Restaurants
   { label: "Experiences", slug: "/ticketing" }, // Events, Concerts
   { label: "The Vault", slug: "/shop", comingSoon: true }, // E-commerce/Merch
-  { label: "Vibe Report", slug: "/media", comingSoon: true }, // Blog/Video content
+  { label: "Vibe Report", slug: "/media" }, // Blog/Video content
   { label: "Concierge", slug: "/concierge", comingSoon: true }, // High-end services
 ];
 
@@ -26,7 +26,7 @@ export const homeNavLinksMobile = [
   { label: "The Black Book", slug: "/reservations" }, // Clubs, Restaurants
   { label: "Experiences", slug: "/ticketing" }, // Events, Concerts
   { label: "The Vault", slug: "/shop", comingSoon: true }, // E-commerce/Merch
-  { label: "Vibe Report", slug: "/media", comingSoon: true }, // Blog/Video content
+  { label: "Vibe Report", slug: "/media" }, // Blog/Video content
   { label: "Concierge", slug: "/concierge", comingSoon: true }, // High-end services
 ];
 
@@ -67,7 +67,7 @@ export const adminNavLinks = [
   },
 
   // Vibe Report (Media)
-  { label: "CMS / Media", slug: "/a/media", icon: IconVideo, comingSoon: true },
+  { label: "CMS / Media", slug: "/a/media", icon: IconVideo },
 
   // High-End (Concierge)
   {

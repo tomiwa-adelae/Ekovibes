@@ -2,7 +2,7 @@
 
 import { ClockIcon } from "lucide-react";
 import { Time } from "@internationalized/date";
-import type { TimeValue } from "react-aria-components";
+import { DateSegment, type TimeValue } from "react-aria-components";
 import { DateInput, TimeField } from "@/components/ui/datefield-rac";
 
 interface TimeInputProps {
@@ -30,7 +30,12 @@ function formatTime(t: TimeValue): string {
   return `${h}:${m}`;
 }
 
-export function TimeInput({ value, onChange, label, className }: TimeInputProps) {
+export function TimeInput({
+  value,
+  onChange,
+  label,
+  className,
+}: TimeInputProps) {
   const timeValue = parseTime(value);
 
   const handleChange = (t: TimeValue | null) => {
@@ -46,7 +51,7 @@ export function TimeInput({ value, onChange, label, className }: TimeInputProps)
       hourCycle={24}
     >
       <div className="relative">
-        <DateInput />
+        <DateInput>{(segment) => <DateSegment segment={segment} />}</DateInput>
         <div className="pointer-events-none absolute inset-y-0 end-0 z-10 flex items-center justify-center pe-3 text-muted-foreground/80">
           <ClockIcon aria-hidden size={16} />
         </div>

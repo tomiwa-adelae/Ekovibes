@@ -171,7 +171,7 @@ export default function AdminVenuesPage() {
           description="Manage The Black Book — restaurants, clubs, and dining venues."
         />
 
-        <Button size="sm" onClick={openCreate}>
+        <Button className="w-full md:auto" size="sm" onClick={openCreate}>
           <IconPlus size={14} className="mr-1" /> Add Venue
         </Button>
       </div>

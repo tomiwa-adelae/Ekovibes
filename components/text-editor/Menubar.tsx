@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { type Editor } from "@tiptap/react";
 import {
   Tooltip,
@@ -29,6 +29,9 @@ import {
   Strikethrough,
   Underline,
   Undo,
+  Code,
+  Upload,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
@@ -41,7 +44,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { FONT_FAMILIES, FONT_SIZES } from "./extensions";
+import { uploadFile } from "@/lib/api";
+import { toast } from "sonner";
+import { IconLoader2 } from "@tabler/icons-react";
 
 interface iAppProps {
   editor: Editor | null;
@@ -126,6 +133,8 @@ export const Menubar = ({ editor }: iAppProps) => {
   const [linkUrl, setLinkUrl] = useState("");
   const [imageOpen, setImageOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!editor) return null;
 
@@ -162,13 +171,38 @@ export const Menubar = ({ editor }: iAppProps) => {
     setLinkUrl("");
   };
 
-  const insertImage = () => {
+  const insertImageByUrl = () => {
     const trimmed = imageUrl.trim();
     if (trimmed) {
       editor.chain().focus().setImage({ src: trimmed }).run();
     }
     setImageOpen(false);
     setImageUrl("");
+  };
+
+  const handleImageFileUpload = async (file: File) => {
+    const allowed = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) {
+      toast.error("Only PNG, JPG, WEBP, or GIF files are supported.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be under 10 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await uploadFile<{ url: string }>("/upload/event-cover", formData);
+      editor.chain().focus().setImage({ src: res.url }).run();
+      setImageOpen(false);
+      toast.success("Image inserted");
+    } catch {
+      toast.error("Image upload failed");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -266,6 +300,13 @@ export const Menubar = ({ editor }: iAppProps) => {
               tooltip="Strikethrough"
             >
               <Strikethrough size={14} />
+            </ToolbarToggle>
+            <ToolbarToggle
+              isActive={editor.isActive("code")}
+              onToggle={() => editor.chain().focus().toggleCode().run()}
+              tooltip="Inline code"
+            >
+              <Code size={14} />
             </ToolbarToggle>
           </div>
 
@@ -448,35 +489,92 @@ export const Menubar = ({ editor }: iAppProps) => {
                 </TooltipContent>
               </Tooltip>
               <PopoverContent className="w-80 p-3" side="bottom" align="start">
-                <div className="flex flex-col gap-2">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Insert image by URL
-                  </p>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="https://example.com/image.png"
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          insertImage();
-                        }
+                <p className="text-xs font-medium text-muted-foreground mb-2">
+                  Insert image
+                </p>
+                <Tabs defaultValue="upload">
+                  <TabsList className="h-7 text-xs mb-3 w-full">
+                    <TabsTrigger value="upload" className="flex-1 text-xs h-6 gap-1">
+                      <Upload size={11} /> Upload
+                    </TabsTrigger>
+                    <TabsTrigger value="url" className="flex-1 text-xs h-6 gap-1">
+                      <Globe size={11} /> URL
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="upload" className="mt-0">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageFileUpload(file);
+                        e.target.value = "";
                       }}
-                      className="h-8 text-xs"
-                      autoFocus
                     />
-                    <Button
-                      size="sm"
-                      type="button"
-                      className="h-8 shrink-0 text-xs px-3"
-                      onClick={insertImage}
-                      disabled={!imageUrl.trim()}
+                    <div
+                      onClick={() => !uploading && fileInputRef.current?.click()}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) handleImageFileUpload(file);
+                      }}
+                      className={cn(
+                        "border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors",
+                        uploading
+                          ? "opacity-60 cursor-not-allowed border-muted"
+                          : "border-muted-foreground/20 hover:border-primary/40 hover:bg-muted/30"
+                      )}
                     >
-                      Insert
-                    </Button>
-                  </div>
-                </div>
+                      {uploading ? (
+                        <>
+                          <IconLoader2 size={20} className="animate-spin text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">Uploading…</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={20} className="text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground text-center">
+                            Click or drag & drop an image
+                          </p>
+                          <p className="text-[10px] text-muted-foreground/60">
+                            PNG, JPG, WEBP, GIF · Max 10 MB
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="url" className="mt-0">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="https://example.com/image.png"
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            insertImageByUrl();
+                          }
+                        }}
+                        className="h-8 text-xs"
+                        autoFocus
+                      />
+                      <Button
+                        size="sm"
+                        type="button"
+                        className="h-8 shrink-0 text-xs px-3"
+                        onClick={insertImageByUrl}
+                        disabled={!imageUrl.trim()}
+                      >
+                        Insert
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </PopoverContent>
             </Popover>
           </div>
@@ -491,6 +589,13 @@ export const Menubar = ({ editor }: iAppProps) => {
               tooltip="Blockquote"
             >
               <Quote size={14} />
+            </ToolbarToggle>
+            <ToolbarToggle
+              isActive={editor.isActive("codeBlock")}
+              onToggle={() => editor.chain().focus().toggleCodeBlock().run()}
+              tooltip="Code block"
+            >
+              <Code size={14} className="opacity-70" />
             </ToolbarToggle>
             <ToolbarButton
               onClick={() => editor.chain().focus().setHorizontalRule().run()}

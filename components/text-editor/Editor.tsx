@@ -36,7 +36,7 @@ export function RichTextEditor({ field }: { field: any }) {
     editorProps: {
       attributes: {
         class:
-          "min-h-[350px] focus:outline-none px-5 py-4 w-full text-sm text-foreground",
+          "rich-content min-h-[350px] focus:outline-none px-5 py-4 w-full text-sm text-foreground",
       },
     },
 

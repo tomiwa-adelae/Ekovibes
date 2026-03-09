@@ -23,7 +23,11 @@ export function ThemeToggle({
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className={color === "white" ? "text-muted-foreground" : "text-black"}
+          className={
+            color === "white"
+              ? "text-muted-foreground"
+              : "text-black dark:text-white"
+          }
           size="icon"
         >
           <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
