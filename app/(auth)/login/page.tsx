@@ -180,7 +180,10 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="text-center text-muted-foreground text-sm">
           <span className="mb-2">Don't have an account yet?</span>
-          <Link href="/register" className="hover:underline hover:text-primary">
+          <Link
+            href="/register"
+            className="hover:underline text-black dark:text-white hover:text-primary"
+          >
             Join now
           </Link>
         </div>
