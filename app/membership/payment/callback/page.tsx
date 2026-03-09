@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { IconLoader2, IconCheck, IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { publicFetch } from "@/lib/api";
 
-export default function MembershipPaymentCallbackPage() {
+function MembershipCallbackInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -115,5 +115,19 @@ export default function MembershipPaymentCallbackPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MembershipPaymentCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <IconLoader2 size={32} className="animate-spin text-white" />
+        </div>
+      }
+    >
+      <MembershipCallbackInner />
+    </Suspense>
   );
 }
