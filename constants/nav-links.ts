@@ -15,7 +15,7 @@ import {
 } from "@tabler/icons-react";
 
 export const homeNavLinks = [
-  { label: "The Black Book", slug: "/reservations" }, // Clubs, Restaurants
+  { label: "The Black Book", slug: "/reservations", comingSoon: true }, // Clubs, Restaurants
   { label: "Experiences", slug: "/ticketing" }, // Events, Concerts
   { label: "The Vault", slug: "/shop", comingSoon: true }, // E-commerce/Merch
   { label: "Vibe Report", slug: "/media" }, // Blog/Video content
