@@ -119,7 +119,7 @@ export const Footer = () => {
 
         <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-border gap-6">
           <p className="text-[10px] text-muted-foreground  uppercase">
-            &copy; {new Date().getFullYear()} Ekovibes Lifestyle Group. All
+            &copy; {new Date().getFullYear()} Ekovibe Lifestyle Group. All
             Rights Reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-6 text-sm, text-muted-foreground uppercase">
