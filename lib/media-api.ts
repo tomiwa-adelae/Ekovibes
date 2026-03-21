@@ -18,6 +18,7 @@ export interface Post {
   category: PostCategory;
   status: PostStatus;
   tags: string[];
+  isFeatured: boolean;
   publishedAt: string | null;
   authorId: string;
   author: PostAuthor;
@@ -33,6 +34,7 @@ export interface PostSummary {
   coverImage: string | null;
   category: PostCategory;
   tags: string[];
+  isFeatured: boolean;
   publishedAt: string | null;
   author: PostAuthor;
 }
@@ -60,14 +62,25 @@ export function getPublishedPosts(query: {
   limit?: number;
   category?: string;
   search?: string;
+  tag?: string;
+  exclude?: string;
+  featured?: boolean;
 } = {}): Promise<PaginatedPosts<PostSummary>> {
   const params = new URLSearchParams();
   if (query.page) params.set('page', String(query.page));
   if (query.limit) params.set('limit', String(query.limit));
   if (query.category) params.set('category', query.category);
   if (query.search) params.set('search', query.search);
+  if (query.tag) params.set('tag', query.tag);
+  if (query.exclude) params.set('exclude', query.exclude);
+  if (query.featured) params.set('featured', 'true');
   const qs = params.toString();
   return publicFetch<PaginatedPosts<PostSummary>>(`/media${qs ? `?${qs}` : ''}`);
+}
+
+export async function getFeaturedPost(): Promise<PostSummary | null> {
+  const res = await getPublishedPosts({ featured: true, limit: 1 });
+  return res.data[0] ?? null;
 }
 
 export function getPublishedPostBySlug(slug: string): Promise<Post> {
@@ -109,6 +122,14 @@ export function publishPost(id: string): Promise<Post> {
 
 export function unpublishPost(id: string): Promise<Post> {
   return updateData<Post>(`/a/media/${id}/unpublish`, {});
+}
+
+export function featurePost(id: string): Promise<Post> {
+  return updateData<Post>(`/a/media/${id}/feature`, {});
+}
+
+export function unfeaturePost(id: string): Promise<Post> {
+  return updateData<Post>(`/a/media/${id}/unfeature`, {});
 }
 
 export function deletePost(id: string): Promise<void> {

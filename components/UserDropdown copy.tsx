@@ -40,11 +40,20 @@ type RoleConfig = {
 const ROLE_CONFIG: Record<string, RoleConfig> = {
   CLIENT: {
     label: "Customer",
-    badgeClass: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+    badgeClass:
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
     links: [
       { href: "/account", label: "My Account", icon: <UserIcon size={15} /> },
-      { href: "/bookings", label: "My Bookings", icon: <CalendarCheckIcon size={15} /> },
-      { href: "/orders", label: "My Orders", icon: <ShoppingBagIcon size={15} /> },
+      {
+        href: "/bookings",
+        label: "My Bookings",
+        icon: <CalendarCheckIcon size={15} />,
+      },
+      {
+        href: "/orders",
+        label: "My Orders",
+        icon: <ShoppingBagIcon size={15} />,
+      },
       { href: "/saved", label: "Saved Items", icon: <HeartIcon size={15} /> },
     ],
   },
@@ -52,19 +61,40 @@ const ROLE_CONFIG: Record<string, RoleConfig> = {
     label: "Professional",
     badgeClass: "bg-primary/10 text-primary",
     links: [
-      { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboardIcon size={15} /> },
-      { href: "/dashboard/services", label: "My Services", icon: <ClipboardListIcon size={15} /> },
-      { href: "/dashboard/bookings", label: "Bookings", icon: <CalendarCheckIcon size={15} /> },
+      {
+        href: "/dashboard",
+        label: "Dashboard",
+        icon: <LayoutDashboardIcon size={15} />,
+      },
+      {
+        href: "/dashboard/services",
+        label: "My Services",
+        icon: <ClipboardListIcon size={15} />,
+      },
+      {
+        href: "/dashboard/bookings",
+        label: "Bookings",
+        icon: <CalendarCheckIcon size={15} />,
+      },
       { href: "/account", label: "My Account", icon: <UserIcon size={15} /> },
     ],
   },
   BRAND: {
     label: "Brand",
-    badgeClass: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+    badgeClass:
+      "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
     links: [
-      { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboardIcon size={15} /> },
-      { href: "/dashboard/products", label: "My Products", icon: <PackageIcon size={15} /> },
-      { href: "/dashboard/orders", label: "Orders", icon: <ShoppingBagIcon size={15} /> },
+      {
+        href: "/dashboard",
+        label: "Dashboard",
+        icon: <LayoutDashboardIcon size={15} />,
+      },
+      {
+        href: "/dashboard/products",
+        label: "My Products",
+        icon: <PackageIcon size={15} />,
+      },
+      { href: "/orders", label: "Orders", icon: <ShoppingBagIcon size={15} /> },
       { href: "/account", label: "My Account", icon: <UserIcon size={15} /> },
     ],
   },
@@ -72,10 +102,22 @@ const ROLE_CONFIG: Record<string, RoleConfig> = {
     label: "Admin",
     badgeClass: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
     links: [
-      { href: "/admin", label: "Admin Panel", icon: <ShieldCheckIcon size={15} /> },
+      {
+        href: "/admin",
+        label: "Admin Panel",
+        icon: <ShieldCheckIcon size={15} />,
+      },
       { href: "/admin/users", label: "Users", icon: <UsersIcon size={15} /> },
-      { href: "/admin/orders", label: "Orders", icon: <ShoppingBagIcon size={15} /> },
-      { href: "/admin/services", label: "Services", icon: <ClipboardListIcon size={15} /> },
+      {
+        href: "/admin/orders",
+        label: "Orders",
+        icon: <ShoppingBagIcon size={15} />,
+      },
+      {
+        href: "/admin/services",
+        label: "Services",
+        icon: <ClipboardListIcon size={15} />,
+      },
     ],
   },
 };
@@ -88,7 +130,8 @@ export function UserDropdown() {
 
   const role = ROLE_CONFIG[user.role] ?? ROLE_CONFIG["CLIENT"];
   const initials =
-    `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "N";
+    `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() ||
+    "N";
 
   return (
     <DropdownMenu>
@@ -107,7 +150,11 @@ export function UserDropdown() {
               {initials}
             </AvatarFallback>
           </Avatar>
-          <ChevronDownIcon size={14} className="text-white/70" aria-hidden="true" />
+          <ChevronDownIcon
+            size={14}
+            className="text-white/70"
+            aria-hidden="true"
+          />
         </Button>
       </DropdownMenuTrigger>
 
@@ -121,13 +168,17 @@ export function UserDropdown() {
                 alt={`${user.firstName} ${user.lastName}`}
                 className="object-cover"
               />
-              <AvatarFallback className="text-xs font-bold">{initials}</AvatarFallback>
+              <AvatarFallback className="text-xs font-bold">
+                {initials}
+              </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold truncate">
                 {user.firstName} {user.lastName}
               </p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user.email}
+              </p>
               <span
                 className={`inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${role.badgeClass}`}
               >

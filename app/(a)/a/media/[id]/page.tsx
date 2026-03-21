@@ -13,6 +13,8 @@ import {
   IconTrash,
   IconPhoto,
   IconX,
+  IconStar,
+  IconStarFilled,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +64,8 @@ import {
   updatePost,
   publishPost,
   unpublishPost,
+  featurePost,
+  unfeaturePost,
   deletePost,
   uploadPostCover,
   POST_CATEGORIES,
@@ -222,6 +226,7 @@ export default function AdminPostDetailPage() {
   const [fetching, setFetching] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [featuring, setFeaturing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -311,6 +316,20 @@ export default function AdminPostDetailPage() {
       toast.error("Action failed");
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const handleFeatureToggle = async () => {
+    if (!post) return;
+    setFeaturing(true);
+    try {
+      const updated = await (post.isFeatured ? unfeaturePost(id) : featurePost(id));
+      setPost(updated);
+      toast.success(post.isFeatured ? "Removed from featured" : "Set as featured post!");
+    } catch {
+      toast.error("Action failed");
+    } finally {
+      setFeaturing(false);
     }
   };
 
@@ -407,6 +426,23 @@ export default function AdminPostDetailPage() {
                     <IconEye size={15} className="mr-1.5" /> Publish
                   </>
                 )}
+              </Button>
+              <Button
+                className="flex-1"
+                type="button"
+                variant={post.isFeatured ? "default" : "outline"}
+                onClick={handleFeatureToggle}
+                disabled={featuring}
+                title={post.isFeatured ? "Remove from featured" : "Set as featured post"}
+              >
+                {featuring ? (
+                  <IconLoader2 size={15} className="animate-spin mr-1.5" />
+                ) : post.isFeatured ? (
+                  <IconStarFilled size={15} className="mr-1.5" />
+                ) : (
+                  <IconStar size={15} className="mr-1.5" />
+                )}
+                {post.isFeatured ? "Featured" : "Feature"}
               </Button>
               <Button
                 className="flex-1"
@@ -619,6 +655,11 @@ export default function AdminPostDetailPage() {
                     <div>Created: {formatDate(post.createdAt)}</div>
                     {post.publishedAt && (
                       <div>Published: {formatDate(post.publishedAt)}</div>
+                    )}
+                    {post.isFeatured && (
+                      <div className="flex items-center gap-1 text-yellow-500">
+                        <IconStarFilled size={11} /> Featured post
+                      </div>
                     )}
                   </div>
                 </CardContent>

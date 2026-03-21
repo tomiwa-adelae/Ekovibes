@@ -180,8 +180,6 @@ function ProfileTab() {
     }
   };
 
-  console.log(user);
-
   const { isSubmitting } = form.formState;
 
   return (

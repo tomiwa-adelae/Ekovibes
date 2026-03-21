@@ -6,11 +6,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import * as RPNInput from "react-phone-number-input";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -366,7 +362,11 @@ function RegisterForm({
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="you@example.com" {...field} />
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -436,13 +436,19 @@ function RegisterForm({
                   <p className="text-foreground text-sm font-medium">
                     {getStrengthText(strengthScore)}. Must contain:
                   </p>
-                  <ul className="space-y-1.5" aria-label="Password requirements">
+                  <ul
+                    className="space-y-1.5"
+                    aria-label="Password requirements"
+                  >
                     {strength.map((req, i) => (
                       <li key={i} className="flex items-center gap-2">
                         {req.met ? (
                           <IconCheck size={16} className="text-emerald-500" />
                         ) : (
-                          <IconX size={16} className="text-muted-foreground/80" />
+                          <IconX
+                            size={16}
+                            className="text-muted-foreground/80"
+                          />
                         )}
                         <span
                           className={`text-xs ${req.met ? "text-emerald-600" : "text-muted-foreground"}`}
@@ -565,7 +571,7 @@ export function AuthModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-md p-0 gap-0 pb-4 overflow-hidden max-h-[90vh] flex flex-col">
         <div className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle className="text-lg font-bold text-center mb-4">
             Sign in to continue

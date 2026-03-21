@@ -29,6 +29,12 @@ import {
   type WithdrawalRequest,
   type WithdrawalStatus,
 } from "@/lib/wallet-api";
+import {
+  getAdminVenueOwnerWithdrawals,
+  approveVenueOwnerWithdrawal,
+  rejectVenueOwnerWithdrawal,
+  type AdminVenueOwnerWithdrawal,
+} from "@/lib/reservations-api";
 
 const STATUS_STYLES: Record<WithdrawalStatus, string> = {
   PENDING: "bg-yellow-500/10 text-yellow-500",
@@ -44,37 +50,72 @@ const FILTERS: { label: string; value: WithdrawalStatus | "ALL" }[] = [
   { label: "Rejected", value: "REJECTED" },
 ];
 
+type Tab = "vendors" | "venues";
+
+// Shared action row types
+type AnyRequest =
+  | (WithdrawalRequest & { _type: "vendor" })
+  | (AdminVenueOwnerWithdrawal & { _type: "venue" });
+
 export default function AdminWithdrawalsPage() {
-  const [requests, setRequests] = useState<WithdrawalRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("vendors");
   const [filter, setFilter] = useState<WithdrawalStatus | "ALL">("PENDING");
 
-  // Action dialog state
-  const [selected, setSelected] = useState<WithdrawalRequest | null>(null);
+  // Vendor requests
+  const [vendorRequests, setVendorRequests] = useState<WithdrawalRequest[]>([]);
+  const [vendorLoading, setVendorLoading] = useState(true);
+
+  // Venue owner requests
+  const [venueRequests, setVenueRequests] = useState<AdminVenueOwnerWithdrawal[]>([]);
+  const [venueLoading, setVenueLoading] = useState(true);
+
+  // Action dialog
+  const [selected, setSelected] = useState<AnyRequest | null>(null);
   const [action, setAction] = useState<"approve" | "reject" | null>(null);
   const [note, setNote] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const loadVendors = useCallback(async () => {
+    setVendorLoading(true);
     try {
       const res = await getAdminWithdrawals({
         status: filter === "ALL" ? undefined : filter,
         limit: 50,
       });
-      setRequests(res.data);
+      setVendorRequests(res.data);
     } catch {
-      toast.error("Failed to load withdrawal requests");
+      toast.error("Failed to load vendor withdrawals");
     } finally {
-      setLoading(false);
+      setVendorLoading(false);
+    }
+  }, [filter]);
+
+  const loadVenues = useCallback(async () => {
+    setVenueLoading(true);
+    try {
+      const res = await getAdminVenueOwnerWithdrawals({
+        status: filter === "ALL" ? undefined : filter,
+        limit: 50,
+      });
+      setVenueRequests(res.data);
+    } catch {
+      toast.error("Failed to load venue owner withdrawals");
+    } finally {
+      setVenueLoading(false);
     }
   }, [filter]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    loadVendors();
+    loadVenues();
+  }, [loadVendors, loadVenues]);
 
-  const openAction = (req: WithdrawalRequest, type: "approve" | "reject") => {
+  const refresh = () => {
+    loadVendors();
+    loadVenues();
+  };
+
+  const openAction = (req: AnyRequest, type: "approve" | "reject") => {
     setSelected(req);
     setAction(type);
     setNote("");
@@ -84,22 +125,120 @@ export default function AdminWithdrawalsPage() {
     if (!selected || !action) return;
     setActionLoading(true);
     try {
-      if (action === "approve") {
-        await approveWithdrawal(selected.id, note || undefined);
-        toast.success("Transfer initiated via Paystack");
+      if (selected._type === "vendor") {
+        if (action === "approve") {
+          await approveWithdrawal(selected.id, note || undefined);
+          toast.success("Transfer initiated via Paystack");
+        } else {
+          await rejectWithdrawal(selected.id, note || undefined);
+          toast.success("Rejected — balance refunded to vendor");
+        }
       } else {
-        await rejectWithdrawal(selected.id, note || undefined);
-        toast.success("Withdrawal rejected — balance refunded to vendor");
+        if (action === "approve") {
+          await approveVenueOwnerWithdrawal(selected.id, note || undefined);
+          toast.success("Transfer initiated via Paystack");
+        } else {
+          await rejectVenueOwnerWithdrawal(selected.id, note || undefined);
+          toast.success("Rejected — balance refunded to venue owner");
+        }
       }
       setSelected(null);
       setAction(null);
-      load();
+      loadVendors();
+      loadVenues();
     } catch (e: any) {
-      toast.error(e?.message ?? "Action failed");
+      toast.error(e?.response?.data?.message ?? "Action failed");
     } finally {
       setActionLoading(false);
     }
   };
+
+  const loading = tab === "vendors" ? vendorLoading : venueLoading;
+
+  function RequestRow({ req }: { req: AnyRequest }) {
+    const name =
+      req._type === "vendor"
+        ? req.vendor?.vendorProfile?.brandName ??
+          `${req.vendor?.firstName} ${req.vendor?.lastName}`
+        : req.wallet.owner.businessName;
+    const sub =
+      req._type === "venue"
+        ? req.wallet.owner.user.email
+        : req.vendor?.email ?? "";
+
+    return (
+      <div
+        className={`flex items-center justify-between p-4 bg-card ${
+          req.status === "PENDING" ? "bg-yellow-500/5" : ""
+        }`}
+      >
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <div className="hidden sm:flex size-10 rounded-full bg-muted items-center justify-center shrink-0">
+            <IconBuildingBank size={18} className="text-muted-foreground" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">{name}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+              {sub && `${sub} · `}
+              {req.accountName} · {req.accountNumber}
+            </p>
+            {req.note && (
+              <p className="text-xs text-muted-foreground mt-0.5 italic">
+                Note: {req.note}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-4 ml-4 shrink-0">
+          <div className="text-right hidden md:block">
+            <p className="text-sm font-bold">{formatNaira(req.amount)}</p>
+            <p className="text-xs text-muted-foreground">
+              {formatDate(req.createdAt)}
+            </p>
+          </div>
+          <Badge
+            className={`text-[10px] uppercase tracking-widest ${STATUS_STYLES[req.status]}`}
+          >
+            {req.status}
+          </Badge>
+          {req.status === "PENDING" && (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => openAction(req, "approve")}
+              >
+                <IconCheck size={14} className="mr-1" /> Approve
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => openAction(req, "reject")}
+              >
+                <IconX size={14} className="mr-1" /> Reject
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const vendorRows = vendorRequests.map(
+    (r) => ({ ...r, _type: "vendor" as const }),
+  );
+  const venueRows = venueRequests.map(
+    (r) => ({ ...r, _type: "venue" as const }),
+  );
+  const rows: AnyRequest[] = tab === "vendors" ? vendorRows : venueRows;
+
+  const dialogName =
+    selected?._type === "vendor"
+      ? selected.vendor?.vendorProfile?.brandName ??
+        `${selected.vendor?.firstName} ${selected.vendor?.lastName}`
+      : selected?._type === "venue"
+        ? selected.wallet.owner.businessName
+        : "";
 
   return (
     <div className="space-y-6">
@@ -107,14 +246,42 @@ export default function AdminWithdrawalsPage() {
         <PageHeader
           back
           title="Withdrawal Requests"
-          description="Review and process vendor payout requests."
+          description="Review and process payout requests."
         />
-        <Button variant="outline" size="sm" onClick={load}>
+        <Button variant="outline" size="sm" onClick={refresh}>
           <IconRefresh size={14} className="mr-1" /> Refresh
         </Button>
       </div>
 
-      {/* Filter tabs */}
+      {/* Source tabs */}
+      <div className="flex gap-2 border-b pb-3">
+        <Button
+          size="sm"
+          variant={tab === "vendors" ? "default" : "ghost"}
+          onClick={() => setTab("vendors")}
+        >
+          Vendors
+          {vendorRequests.filter((r) => r.status === "PENDING").length > 0 && (
+            <Badge className="ml-1.5 bg-yellow-500 text-white text-[10px] px-1.5">
+              {vendorRequests.filter((r) => r.status === "PENDING").length}
+            </Badge>
+          )}
+        </Button>
+        <Button
+          size="sm"
+          variant={tab === "venues" ? "default" : "ghost"}
+          onClick={() => setTab("venues")}
+        >
+          Venue Owners
+          {venueRequests.filter((r) => r.status === "PENDING").length > 0 && (
+            <Badge className="ml-1.5 bg-yellow-500 text-white text-[10px] px-1.5">
+              {venueRequests.filter((r) => r.status === "PENDING").length}
+            </Badge>
+          )}
+        </Button>
+      </div>
+
+      {/* Status filter */}
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <Button
@@ -132,7 +299,7 @@ export default function AdminWithdrawalsPage() {
         <div className="flex items-center justify-center h-40">
           <IconLoader2 className="animate-spin text-muted-foreground" />
         </div>
-      ) : requests.length === 0 ? (
+      ) : rows.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center gap-2">
           <IconBuildingBank size={32} className="text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">
@@ -141,67 +308,8 @@ export default function AdminWithdrawalsPage() {
         </div>
       ) : (
         <div className="divide-y border rounded-lg overflow-hidden">
-          {requests.map((req) => (
-            <div
-              key={req.id}
-              className={`flex items-center justify-between p-4 bg-card ${
-                req.status === "PENDING" ? "bg-yellow-500/5" : ""
-              }`}
-            >
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className="hidden sm:flex size-10 rounded-full bg-muted items-center justify-center shrink-0">
-                  <IconBuildingBank
-                    size={18}
-                    className="text-muted-foreground"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold">
-                    {req.vendor?.vendorProfile?.brandName ??
-                      `${req.vendor?.firstName} ${req.vendor?.lastName}`}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                    {req.accountName} · {req.accountNumber} · {req.bankCode}
-                  </p>
-                  {req.note && (
-                    <p className="text-xs text-muted-foreground mt-0.5 italic">
-                      Note: {req.note}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-4 ml-4 shrink-0">
-                <div className="text-right hidden md:block">
-                  <p className="text-sm font-bold">{formatNaira(req.amount)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDate(req.createdAt)}
-                  </p>
-                </div>
-                <Badge
-                  className={`text-[10px] uppercase tracking-widest ${STATUS_STYLES[req.status]}`}
-                >
-                  {req.status}
-                </Badge>
-                {req.status === "PENDING" && (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => openAction(req, "approve")}
-                    >
-                      <IconCheck size={14} className="mr-1" /> Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => openAction(req, "reject")}
-                    >
-                      <IconX size={14} className="mr-1" /> Reject
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
+          {rows.map((req) => (
+            <RequestRow key={req.id} req={req} />
           ))}
         </div>
       )}
@@ -219,26 +327,21 @@ export default function AdminWithdrawalsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {action === "approve"
-                ? "Approve & Transfer"
-                : "Reject Withdrawal"}
+              {action === "approve" ? "Approve & Transfer" : "Reject Withdrawal"}
             </DialogTitle>
           </DialogHeader>
           {selected && (
             <div className="space-y-4 py-2">
               <div className="rounded-lg border p-4 space-y-1.5 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Vendor</span>
-                  <span className="font-medium">
-                    {selected.vendor?.vendorProfile?.brandName ??
-                      `${selected.vendor?.firstName} ${selected.vendor?.lastName}`}
+                  <span className="text-muted-foreground">
+                    {selected._type === "vendor" ? "Vendor" : "Venue Owner"}
                   </span>
+                  <span className="font-medium">{dialogName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Amount</span>
-                  <span className="font-bold">
-                    {formatNaira(selected.amount)}
-                  </span>
+                  <span className="font-bold">{formatNaira(selected.amount)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Account</span>
@@ -248,7 +351,7 @@ export default function AdminWithdrawalsPage() {
                 </div>
               </div>
               {action === "approve" && (
-                <p className="text-xs text-muted-foreground bg-yellow-500/10 text-yellow-600 rounded-lg px-3 py-2">
+                <p className="text-xs bg-yellow-500/10 text-yellow-600 rounded-lg px-3 py-2">
                   This will immediately initiate a Paystack bank transfer. Make
                   sure your Paystack balance is sufficient.
                 </p>
@@ -263,7 +366,7 @@ export default function AdminWithdrawalsPage() {
                 <Textarea
                   placeholder={
                     action === "reject"
-                      ? "Reason for rejection (visible to vendor)..."
+                      ? "Reason for rejection (visible to recipient)..."
                       : "Internal note..."
                   }
                   value={note}

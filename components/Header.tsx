@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React from "react";
+import React, { useEffect } from "react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { MobileNavbar } from "./MobileNavbar";
@@ -10,10 +10,20 @@ import { homeNavLinks } from "@/constants/nav-links";
 import { UserDropdown } from "./UserDropdown";
 import { IconLock, IconShoppingCart } from "@tabler/icons-react";
 import { useAuth } from "@/store/useAuth";
+import { useCart } from "@/store/useCart";
 
 export const Header = () => {
   const pathname = usePathname();
   const { user, _hasHydrated } = useAuth();
+  const { fetchCart, itemCount } = useCart();
+
+  useEffect(() => {
+    if (_hasHydrated && user) {
+      fetchCart();
+    }
+  }, [_hasHydrated, user, fetchCart]);
+
+  const cartCount = itemCount();
 
   const isActive = (slug: string) =>
     pathname === slug || pathname.startsWith(`${slug}/`);
@@ -59,19 +69,31 @@ export const Header = () => {
           <div className="hidden md:block">
             <ThemeToggle />
           </div>
-          {/* <Button
+          <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             asChild
-            className="relative text-white"
+            className="hidden lg:inline-flex text-white/70 hover:text-white hover:bg-white/10"
           >
-            <Link href="/cart">
-              <IconShoppingCart size={24} />
-              <span className="absolute -top-1 -right-1 bg-secondary text-primary text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center border-2 border-primary">
-                0
-              </span>
-            </Link>
-          </Button> */}
+            <Link href="/partners">For Venues</Link>
+          </Button>
+          {_hasHydrated && user && (
+            <Button
+              variant="ghost"
+              size="icon"
+              asChild
+              className="relative text-white hover:bg-white/10"
+            >
+              <Link href="/vault/cart">
+                <IconShoppingCart size={22} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-secondary text-primary text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center border-2 border-primary">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
+              </Link>
+            </Button>
+          )}
           {_hasHydrated && user ? (
             <UserDropdown />
           ) : (

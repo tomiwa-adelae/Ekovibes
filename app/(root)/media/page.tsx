@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
-import { IconLoader2, IconSearch } from "@tabler/icons-react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { IconLoader2, IconSearch, IconX } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   getPublishedPosts,
+  getFeaturedPost,
   POST_CATEGORIES,
   type PostSummary,
   type PostCategory,
@@ -16,14 +18,26 @@ import { formatDate } from "@/lib/utils";
 import { DEFAULT_IMAGE } from "@/constants";
 import { PageHeader } from "@/components/PageHeader";
 
-export default function VibeReportPage() {
+function VibeReportContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const initialTag = searchParams.get("tag") ?? "";
+
+  const [featured, setFeatured] = useState<PostSummary | null>(null);
   const [posts, setPosts] = useState<PostSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<PostCategory | "">("");
+  const [tag, setTag] = useState(initialTag);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const LIMIT = 12;
+
+  // Load featured post once
+  useEffect(() => {
+    getFeaturedPost().then(setFeatured).catch(() => null);
+  }, []);
 
   const load = useCallback(
     async (currentPage = 1, reset = false) => {
@@ -34,6 +48,7 @@ export default function VibeReportPage() {
           limit: LIMIT,
           search: search || undefined,
           category: category || undefined,
+          tag: tag || undefined,
         });
         setPosts((prev) => (reset ? res.data : [...prev, ...res.data]));
         setTotal(res.total);
@@ -43,14 +58,14 @@ export default function VibeReportPage() {
         setLoading(false);
       }
     },
-    [search, category],
+    [search, category, tag],
   );
 
   useEffect(() => {
     setPage(1);
     const t = setTimeout(() => load(1, true), 300);
     return () => clearTimeout(t);
-  }, [search, category, load]);
+  }, [search, category, tag, load]);
 
   const loadMore = () => {
     const next = page + 1;
@@ -58,7 +73,13 @@ export default function VibeReportPage() {
     load(next, false);
   };
 
+  const clearTag = () => {
+    setTag("");
+    router.replace("/media");
+  };
+
   const hasMore = posts.length < total;
+  const isFiltered = !!search || !!category || !!tag;
 
   return (
     <main className="container py-12 space-y-10">
@@ -69,8 +90,60 @@ export default function VibeReportPage() {
         description={"News, lifestyle, and culture from the Ekovibe world."}
       />
 
+      {/* Featured hero — only shown when no active filter */}
+      {!isFiltered && featured && (
+        <Link
+          href={`/media/${featured.slug}`}
+          className="group relative flex flex-col sm:flex-row rounded-xl border overflow-hidden hover:border-primary/50 transition-colors"
+        >
+          <div className="sm:w-1/2 aspect-video sm:aspect-auto overflow-hidden bg-muted shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={featured.coverImage || DEFAULT_IMAGE}
+              alt={featured.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          </div>
+          <div className="flex flex-col justify-center p-6 sm:p-8 space-y-3">
+            <div className="flex items-center gap-2">
+              <Badge className="bg-primary text-primary-foreground text-[10px] uppercase tracking-widest">
+                Featured
+              </Badge>
+              <Badge variant="outline" className="text-xs capitalize">
+                {featured.category.toLowerCase()}
+              </Badge>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
+              {featured.title}
+            </h2>
+            {featured.excerpt && (
+              <p className="text-sm text-muted-foreground line-clamp-3">
+                {featured.excerpt}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              By {featured.author.firstName} {featured.author.lastName}
+              {featured.publishedAt && ` · ${formatDate(featured.publishedAt)}`}
+            </p>
+          </div>
+        </Link>
+      )}
+
+      {/* Active tag filter banner */}
+      {tag && (
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Filtering by tag:</span>
+          <Badge variant="secondary" className="gap-1">
+            #{tag}
+            <button onClick={clearTag} className="ml-1 opacity-60 hover:opacity-100">
+              <IconX size={11} />
+            </button>
+          </Badge>
+        </div>
+      )}
+
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row mt-4 gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <IconSearch
             size={15}
@@ -155,9 +228,32 @@ export default function VibeReportPage() {
                     </p>
                   )}
 
-                  <p className="text-xs text-muted-foreground pt-1">
-                    By {post.author.firstName} {post.author.lastName}
-                  </p>
+                  <div className="flex items-center justify-between pt-1">
+                    <p className="text-xs text-muted-foreground">
+                      By {post.author.firstName} {post.author.lastName}
+                    </p>
+                    {post.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {post.tags.slice(0, 2).map((t) => (
+                          <button
+                            key={t}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setTag(t);
+                              router.replace(`/media?tag=${encodeURIComponent(t)}`);
+                            }}
+                          >
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] hover:bg-secondary/80 transition-colors"
+                            >
+                              #{t}
+                            </Badge>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Link>
             ))}
@@ -176,5 +272,13 @@ export default function VibeReportPage() {
         </>
       )}
     </main>
+  );
+}
+
+export default function VibeReportPage() {
+  return (
+    <Suspense>
+      <VibeReportContent />
+    </Suspense>
   );
 }

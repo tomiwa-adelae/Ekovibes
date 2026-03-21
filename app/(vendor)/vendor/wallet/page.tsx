@@ -266,7 +266,7 @@ export default function VendorWalletPage() {
           <DialogHeader>
             <DialogTitle>Request Withdrawal</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 py-2 overflow-y-auto">
             {/* Amount */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Amount (₦)</label>

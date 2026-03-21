@@ -1,289 +1,268 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
-  IconLoader2,
   IconBuilding,
+  IconLoader2,
   IconMapPin,
-  IconCalendar,
+  IconSearch,
+  IconX,
 } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { toast } from "sonner";
-import { useAuth } from "@/store/useAuth";
-import { getVenues, createReservation, type Venue, type VenueType } from "@/lib/reservations-api";
+  getVenues,
+  VENUE_CATEGORIES,
+  VENUE_CATEGORY_LABELS,
+  type Venue,
+  type VenueCategory,
+} from "@/lib/reservations-api";
 
-const VENUE_TYPE_LABELS: Record<VenueType, string> = {
-  RESTAURANT: "Restaurant",
-  NIGHTCLUB: "Nightclub",
-  LOUNGE: "Lounge",
-  PRIVATE_DINING: "Private Dining",
-  ROOFTOP: "Rooftop",
+const MODE_LABEL: Record<string, string> = {
+  INSTANT: "Instant Book",
+  REQUEST: "Request to Book",
 };
 
-const TIME_SLOTS = [
-  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-  "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
-  "20:00", "20:30", "21:00", "21:30", "22:00", "22:30",
-];
-
 export default function ReservationsPage() {
-  const { user } = useAuth();
   const [venues, setVenues] = useState<Venue[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Venue | null>(null);
+  const [category, setCategory] = useState<VenueCategory | "">("");
+  const [city, setCity] = useState("");
+  const [cityInput, setCityInput] = useState("");
+  const [page, setPage] = useState(1);
+  const LIMIT = 18;
 
-  // Form state
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [partySize, setPartySize] = useState("2");
-  const [notes, setNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const load = useCallback(() => {
+    setLoading(true);
+    getVenues({
+      category: category || undefined,
+      city: city || undefined,
+      page,
+      limit: LIMIT,
+    })
+      .then((res) => {
+        setVenues(res.data);
+        setTotal(res.meta.total);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [category, city, page]);
 
   useEffect(() => {
-    getVenues()
-      .then(setVenues)
-      .finally(() => setLoading(false));
-  }, []);
+    setPage(1);
+  }, [category, city]);
 
-  const openBooking = (venue: Venue) => {
-    setSelected(venue);
-    setDate("");
-    setTime("");
-    setPartySize("2");
-    setNotes("");
-    setSuccess(false);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleCitySearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCity(cityInput.trim());
   };
 
-  const handleSubmit = async () => {
-    if (!selected || !date || !time || !partySize) return;
-    if (!user) {
-      toast.error("Please log in to make a reservation");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await createReservation({
-        venueId: selected.id,
-        date,
-        time,
-        partySize: Number(partySize),
-        notes: notes || undefined,
-      });
-      setSuccess(true);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to submit reservation");
-    } finally {
-      setSubmitting(false);
-    }
+  const clearFilters = () => {
+    setCategory("");
+    setCity("");
+    setCityInput("");
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <IconLoader2 className="animate-spin text-muted-foreground" size={28} />
-      </div>
-    );
-  }
+  const totalPages = Math.ceil(total / LIMIT);
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container py-12 space-y-8">
-        {/* Header */}
-        <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+      {/* Hero */}
+      <div className="border-b bg-muted/30">
+        <div className="container py-12">
+          <p className="text-xs uppercase text-muted-foreground mb-2">
             The Black Book
           </p>
-          <h1 className="text-4xl font-black uppercase tracking-tight">
+          <h1 className="text-4xl font-bold uppercase mb-2">
             Reserve Your Table
           </h1>
-          <p className="text-muted-foreground mt-2 max-w-xl">
-            Exclusive access to Lagos' finest restaurants, lounges, and dining
-            experiences — curated for Ekovibe members.
+          <p className="text-muted-foreground max-w-xl text-sm">
+            Exclusive access to Lagos' finest restaurants, clubs, lounges and
+            dining experiences — curated for Ekovibe members.
           </p>
         </div>
+      </div>
 
-        {venues.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
+      <div className="container py-8 space-y-6">
+        {/* Search + filters */}
+        <div className="space-y-4">
+          {/* City search */}
+          <form onSubmit={handleCitySearch} className="flex gap-2">
+            <div className="relative flex-1">
+              <IconSearch
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                className="pl-8"
+                placeholder="Search by city…"
+                value={cityInput}
+                onChange={(e) => setCityInput(e.target.value)}
+              />
+            </div>
+            <Button type="submit" variant="outline">
+              Search
+            </Button>
+            {city && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setCity("");
+                  setCityInput("");
+                }}
+              >
+                <IconX size={14} />
+              </Button>
+            )}
+          </form>
+
+          {/* Category pills */}
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setCategory("")}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                !category
+                  ? "bg-primary text-background border-foreground"
+                  : "border-border hover:border-foreground/40"
+              }`}
+            >
+              All
+            </button>
+            {VENUE_CATEGORIES.map((c) => (
+              <button
+                key={c}
+                onClick={() => setCategory(c === category ? "" : c)}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                  category === c
+                    ? "bg-foreground text-background border-foreground"
+                    : "border-border hover:border-foreground/40"
+                }`}
+              >
+                {VENUE_CATEGORY_LABELS[c]}
+              </button>
+            ))}
+          </div>
+
+          {/* Active filter indicator */}
+          {(category || city) && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>
+                Showing {total} result{total !== 1 ? "s" : ""}
+              </span>
+              <button
+                onClick={clearFilters}
+                className="text-foreground hover:underline"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Grid */}
+        {loading ? (
+          <div className="flex items-center justify-center h-56">
+            <IconLoader2
+              className="animate-spin text-muted-foreground"
+              size={28}
+            />
+          </div>
+        ) : venues.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32 text-center gap-3 border rounded-xl">
             <IconBuilding size={40} className="text-muted-foreground/30" />
-            <p className="text-muted-foreground">
-              No venues available yet. Check back soon.
+            <p className="text-muted-foreground text-sm">
+              No venues available matching your filters.
             </p>
+            {(category || city) && (
+              <Button size="sm" variant="outline" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {venues.map((venue) => (
-              <div
+              <Link
                 key={venue.id}
-                className="group border rounded-xl overflow-hidden bg-card hover:border-foreground/20 transition-colors cursor-pointer"
-                onClick={() => openBooking(venue)}
+                href={`/reservations/${venue.slug}`}
+                className="group border rounded-xl overflow-hidden bg-card hover:border-foreground/20 transition-colors"
               >
                 {venue.coverImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={venue.coverImage}
                     alt={venue.name}
-                    className="w-full aspect-video object-cover"
+                    className="w-full aspect-video object-cover group-hover:brightness-90 transition-all"
                   />
                 ) : (
                   <div className="w-full aspect-video bg-muted flex items-center justify-center">
-                    <IconBuilding size={32} className="text-muted-foreground/30" />
+                    <IconBuilding
+                      size={32}
+                      className="text-muted-foreground/30"
+                    />
                   </div>
                 )}
                 <div className="p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-bold text-sm">{venue.name}</h3>
-                    <Badge variant="outline" className="text-[10px] uppercase tracking-wider shrink-0">
-                      {VENUE_TYPE_LABELS[venue.type]}
+                    <h3 className="font-bold text-sm leading-tight">
+                      {venue.name}
+                    </h3>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] uppercase tracking-wider shrink-0"
+                    >
+                      {VENUE_CATEGORY_LABELS[venue.category]}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <IconMapPin size={12} />
-                    {venue.address}, {venue.city}
+                    <IconMapPin size={11} />
+                    {venue.city}
                   </div>
-                  {venue.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {venue.description}
+                  {venue.bookingMode && (
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                      {MODE_LABEL[venue.bookingMode]}
                     </p>
                   )}
-                  <Button size="sm" className="w-full mt-2">
-                    <IconCalendar size={14} className="mr-1" /> Request Booking
-                  </Button>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
-      </div>
 
-      {/* Booking dialog */}
-      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{selected?.name}</DialogTitle>
-          </DialogHeader>
-          {success ? (
-            <div className="py-8 text-center space-y-3">
-              <div className="size-14 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-                <IconCalendar size={24} className="text-green-500" />
-              </div>
-              <h3 className="font-bold text-lg">Request Submitted</h3>
-              <p className="text-sm text-muted-foreground">
-                We've received your reservation request for{" "}
-                <strong>{selected?.name}</strong>. Our team will confirm your
-                booking within 24 hours.
-              </p>
-              <Button
-                className="w-full mt-2"
-                onClick={() => setSelected(null)}
-              >
-                Done
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-4 py-2">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Date</label>
-                    <Input
-                      type="date"
-                      value={date}
-                      min={new Date().toISOString().split("T")[0]}
-                      onChange={(e) => setDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Time</label>
-                    <Select value={time} onValueChange={setTime}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TIME_SLOTS.map((t) => (
-                          <SelectItem key={t} value={t}>
-                            {t}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Party Size</label>
-                  <Select value={partySize} onValueChange={setPartySize}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
-                        <SelectItem key={n} value={String(n)}>
-                          {n} {n === 1 ? "guest" : "guests"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">
-                    Special Requests{" "}
-                    <span className="text-muted-foreground font-normal">
-                      (optional)
-                    </span>
-                  </label>
-                  <Textarea
-                    placeholder="Dietary requirements, occasion, seating preferences…"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-                {!user && (
-                  <p className="text-xs text-yellow-500 bg-yellow-500/10 rounded-lg px-3 py-2">
-                    You must be logged in to make a reservation.
-                  </p>
-                )}
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setSelected(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  disabled={!date || !time || !partySize || submitting || !user}
-                  onClick={handleSubmit}
-                >
-                  {submitting ? (
-                    <IconLoader2 size={14} className="animate-spin mr-1" />
-                  ) : (
-                    <IconCalendar size={14} className="mr-1" />
-                  )}
-                  Request Booking
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-4">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {page} / {totalPages}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

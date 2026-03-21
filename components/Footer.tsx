@@ -26,12 +26,12 @@ export const Footer = () => {
             </h4>
             <ul className="space-y-4 text-xs uppercase  font-medium">
               <li>
-                {/* <Link
+                <Link
                   href="/reservations"
                   className="hover:text-muted-foreground transition-colors"
-                > */}
-                The Black Book
-                {/* </Link> */}
+                >
+                  The Black Book
+                </Link>
               </li>
               <li>
                 {/* <Link
@@ -55,6 +55,14 @@ export const Footer = () => {
                   className="hover:text-muted-foreground transition-colors"
                 >
                   Experiences
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/partners"
+                  className="hover:text-muted-foreground transition-colors"
+                >
+                  List Your Venue
                 </Link>
               </li>
             </ul>

@@ -1,15 +1,18 @@
 "use client";
+
 import React, { useEffect, useState, useCallback } from "react";
 import {
   IconCalendar,
   IconLoader2,
   IconCheck,
   IconX,
-  IconMapPin,
   IconUsers,
+  IconClock,
+  IconBuilding,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -17,44 +20,65 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import {
   getAdminReservations,
-  confirmReservation,
-  rejectReservation,
+  adminConfirmReservation,
+  adminCancelReservation,
+  formatNaira,
   type Reservation,
   type ReservationStatus,
 } from "@/lib/reservations-api";
 
 const STATUS_STYLES: Record<ReservationStatus, string> = {
-  PENDING: "bg-yellow-500/10 text-yellow-500",
+  PENDING_PAYMENT: "bg-orange-500/10 text-orange-500",
+  PENDING_APPROVAL: "bg-yellow-500/10 text-yellow-500",
   CONFIRMED: "bg-green-500/10 text-green-500",
   REJECTED: "bg-red-500/10 text-red-400",
-  CANCELLED: "bg-muted text-muted-foreground",
+  MODIFIED: "bg-blue-500/10 text-blue-400",
+  CANCELLED_BY_GUEST: "bg-muted text-muted-foreground",
+  CANCELLED_BY_VENUE: "bg-muted text-muted-foreground",
   COMPLETED: "bg-muted text-muted-foreground",
+  NO_SHOW: "bg-muted text-muted-foreground",
 };
 
-const TABS: { label: string; value: ReservationStatus | "ALL" }[] = [
+const STATUS_LABELS: Record<ReservationStatus, string> = {
+  PENDING_PAYMENT: "Awaiting Payment",
+  PENDING_APPROVAL: "Pending Approval",
+  CONFIRMED: "Confirmed",
+  REJECTED: "Rejected",
+  MODIFIED: "Modified",
+  CANCELLED_BY_GUEST: "Cancelled by Guest",
+  CANCELLED_BY_VENUE: "Cancelled by Venue",
+  COMPLETED: "Completed",
+  NO_SHOW: "No Show",
+};
+
+const FILTER_TABS: { label: string; value: ReservationStatus | "ALL" }[] = [
   { label: "All", value: "ALL" },
-  { label: "Pending", value: "PENDING" },
+  { label: "Pending", value: "PENDING_APPROVAL" },
+  { label: "Awaiting Payment", value: "PENDING_PAYMENT" },
   { label: "Confirmed", value: "CONFIRMED" },
+  { label: "Completed", value: "COMPLETED" },
   { label: "Rejected", value: "REJECTED" },
 ];
 
 export default function AdminReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<ReservationStatus | "ALL">("PENDING");
+  const [tab, setTab] = useState<ReservationStatus | "ALL">("PENDING_APPROVAL");
   const [selected, setSelected] = useState<Reservation | null>(null);
-  const [action, setAction] = useState<"confirm" | "reject" | null>(null);
+  const [action, setAction] = useState<"confirm" | "cancel" | null>(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
-    getAdminReservations(tab === "ALL" ? {} : { status: tab })
+    getAdminReservations({
+      status: tab === "ALL" ? undefined : tab,
+      limit: 50,
+    })
       .then((res) => setReservations(res.data))
       .finally(() => setLoading(false));
   }, [tab]);
@@ -63,8 +87,8 @@ export default function AdminReservationsPage() {
     load();
   }, [load]);
 
-  const openAction = (reservation: Reservation, act: "confirm" | "reject") => {
-    setSelected(reservation);
+  const openAction = (res: Reservation, act: "confirm" | "cancel") => {
+    setSelected(res);
     setAction(act);
     setNote("");
   };
@@ -74,17 +98,17 @@ export default function AdminReservationsPage() {
     setSubmitting(true);
     try {
       if (action === "confirm") {
-        await confirmReservation(selected.id, note || undefined);
-        toast.success("Reservation confirmed");
+        await adminConfirmReservation(selected.id, note || undefined);
+        toast.success("Reservation confirmed.");
       } else {
-        await rejectReservation(selected.id, note || undefined);
-        toast.success("Reservation rejected");
+        await adminCancelReservation(selected.id, note || undefined);
+        toast.success("Reservation cancelled and refund issued.");
       }
       setSelected(null);
       setAction(null);
       load();
     } catch (e: any) {
-      toast.error(e?.message ?? "Failed to update reservation");
+      toast.error(e?.response?.data?.message ?? "Action failed.");
     } finally {
       setSubmitting(false);
     }
@@ -95,12 +119,12 @@ export default function AdminReservationsPage() {
       <PageHeader
         back
         title="Bookings"
-        description="Review and manage reservation requests from The Black Book."
+        description="Oversight of all reservations across The Black Book."
       />
 
       {/* Filter tabs */}
-      <div className="flex gap-2">
-        {TABS.map((t) => (
+      <div className="flex gap-2 flex-wrap">
+        {FILTER_TABS.map((t) => (
           <Button
             key={t.value}
             size="sm"
@@ -124,87 +148,122 @@ export default function AdminReservationsPage() {
           </p>
         </div>
       ) : (
-        <div className="border rounded-xl overflow-hidden">
-          <div className="divide-y">
-            {reservations.map((res) => (
-              <div
-                key={res.id}
-                className="p-4 flex items-start justify-between gap-4"
-              >
-                <div className="flex-1 min-w-0 space-y-1">
+        <div className="border rounded-xl overflow-hidden divide-y">
+          {reservations.map((res) => (
+            <div key={res.id} className="p-4 space-y-2">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="space-y-0.5 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-medium text-sm">
                       {res.user
                         ? `${res.user.firstName} ${res.user.lastName}`
-                        : "Unknown User"}
+                        : "Unknown"}
                     </p>
                     <Badge
-                      className={`text-[10px] uppercase tracking-widest ${STATUS_STYLES[res.status]}`}
+                      className={`text-[10px] uppercase tracking-wider ${STATUS_STYLES[res.status]}`}
                     >
-                      {res.status}
+                      {STATUS_LABELS[res.status]}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <IconMapPin size={11} />
-                      {res.venue?.name ?? "—"}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <IconCalendar size={11} />
-                      {res.date} at {res.time}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <IconUsers size={11} />
-                      {res.partySize} {res.partySize === 1 ? "guest" : "guests"}
-                    </span>
-                  </div>
-                  {res.notes && (
-                    <p className="text-xs text-muted-foreground italic">
-                      "{res.notes}"
-                    </p>
-                  )}
-                  {res.adminNote && (
-                    <p className="text-xs text-muted-foreground">
-                      <span className="text-foreground font-medium">Note:</span>{" "}
-                      {res.adminNote}
-                    </p>
-                  )}
                   {res.user?.email && (
                     <p className="text-xs text-muted-foreground">
                       {res.user.email}
                     </p>
                   )}
                 </div>
-                {res.status === "PENDING" && (
-                  <div className="flex gap-2 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-green-500 border-green-500/30 hover:bg-green-500/10"
-                      onClick={() => openAction(res, "confirm")}
-                    >
-                      <IconCheck size={14} className="mr-1" /> Confirm
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-400 border-red-500/30 hover:bg-red-500/10"
-                      onClick={() => openAction(res, "reject")}
-                    >
-                      <IconX size={14} className="mr-1" /> Reject
-                    </Button>
-                  </div>
+                <p className="text-xs font-mono text-muted-foreground shrink-0">
+                  {res.reference}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                {res.venue && (
+                  <span className="flex items-center gap-1">
+                    <IconBuilding size={11} /> {res.venue.name}
+                  </span>
+                )}
+                <span className="flex items-center gap-1">
+                  <IconCalendar size={11} />
+                  {new Date(res.date).toLocaleDateString("en-NG", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+                <span className="flex items-center gap-1">
+                  <IconClock size={11} /> {res.timeSlot}
+                  {res.session && ` · ${res.session.name}`}
+                </span>
+                <span className="flex items-center gap-1">
+                  <IconUsers size={11} /> {res.partySize} guests
+                </span>
+                {res.depositAmount > 0 && (
+                  <span>Deposit: {formatNaira(res.depositAmount)}</span>
                 )}
               </div>
-            ))}
-          </div>
+
+              {res.notes && (
+                <p className="text-xs text-muted-foreground italic">
+                  "{res.notes}"
+                </p>
+              )}
+              {res.adminNote && (
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-foreground font-medium">
+                    Admin note:
+                  </span>{" "}
+                  {res.adminNote}
+                </p>
+              )}
+              {res.venueNote && (
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-foreground font-medium">
+                    Venue note:
+                  </span>{" "}
+                  {res.venueNote}
+                </p>
+              )}
+
+              {/* Admin override actions */}
+              <div className="flex gap-2 pt-1">
+                {(res.status === "PENDING_APPROVAL" ||
+                  res.status === "PENDING_PAYMENT") && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-green-500 border-green-500/30 hover:bg-green-500/10"
+                    onClick={() => openAction(res, "confirm")}
+                  >
+                    <IconCheck size={13} className="mr-1" /> Override Confirm
+                  </Button>
+                )}
+                {![
+                  "CANCELLED_BY_GUEST",
+                  "CANCELLED_BY_VENUE",
+                  "COMPLETED",
+                  "NO_SHOW",
+                  "REJECTED",
+                ].includes(res.status) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-red-400 border-red-500/30 hover:bg-red-500/10"
+                    onClick={() => openAction(res, "cancel")}
+                  >
+                    <IconX size={13} className="mr-1" /> Override Cancel
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       <Dialog
         open={!!selected && !!action}
-        onOpenChange={(open) => {
-          if (!open) {
+        onOpenChange={(o) => {
+          if (!o) {
             setSelected(null);
             setAction(null);
           }
@@ -214,32 +273,41 @@ export default function AdminReservationsPage() {
           <DialogHeader>
             <DialogTitle>
               {action === "confirm"
-                ? "Confirm Reservation"
-                : "Reject Reservation"}
+                ? "Override Confirm Reservation"
+                : "Override Cancel Reservation"}
             </DialogTitle>
           </DialogHeader>
           {selected && (
             <div className="space-y-4 py-2">
-              <div className="rounded-lg border bg-muted/30 p-3 space-y-1 text-sm">
+              <div className="rounded-lg border bg-muted/30 p-3 text-sm space-y-1">
                 <p className="font-medium">
                   {selected.user
                     ? `${selected.user.firstName} ${selected.user.lastName}`
-                    : "Unknown"}
+                    : selected.reference}
                 </p>
-                <p className="text-muted-foreground text-xs">
-                  {selected.venue?.name} · {selected.date} at {selected.time} ·{" "}
-                  {selected.partySize}{" "}
-                  {selected.partySize === 1 ? "guest" : "guests"}
+                <p className="text-xs text-muted-foreground">
+                  {selected.venue?.name} ·{" "}
+                  {new Date(selected.date).toLocaleDateString("en-NG", {
+                    day: "numeric",
+                    month: "long",
+                  })}{" "}
+                  at {selected.timeSlot} · {selected.partySize} guests
                 </p>
-                {selected.notes && (
-                  <p className="text-muted-foreground text-xs italic">
-                    "{selected.notes}"
+                {selected.depositAmount > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Deposit: {formatNaira(selected.depositAmount)}
                   </p>
                 )}
               </div>
+              {action === "cancel" && selected.depositAmount > 0 && (
+                <p className="text-xs text-amber-500 border border-amber-500/20 rounded px-2 py-1.5 bg-amber-500/5">
+                  A full refund of {formatNaira(selected.depositAmount)} will be
+                  issued to the guest.
+                </p>
+              )}
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">
-                  Note to guest{" "}
+                  Admin note{" "}
                   <span className="text-muted-foreground font-normal">
                     (optional)
                   </span>
@@ -247,8 +315,8 @@ export default function AdminReservationsPage() {
                 <Textarea
                   placeholder={
                     action === "confirm"
-                      ? "e.g. Your table has been reserved. Please arrive 10 minutes early."
-                      : "e.g. Unfortunately we are fully booked on that date."
+                      ? "Reason for override confirmation…"
+                      : "Reason for cancellation…"
                   }
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -270,12 +338,12 @@ export default function AdminReservationsPage() {
             <Button
               onClick={handleSubmit}
               disabled={submitting}
-              variant={action === "reject" ? "destructive" : "default"}
+              variant={action === "cancel" ? "destructive" : "default"}
             >
               {submitting && (
-                <IconLoader2 size={14} className="animate-spin mr-1" />
+                <IconLoader2 size={13} className="animate-spin mr-1" />
               )}
-              {action === "confirm" ? "Confirm Booking" : "Reject Booking"}
+              {action === "confirm" ? "Confirm Reservation" : "Cancel & Refund"}
             </Button>
           </DialogFooter>
         </DialogContent>

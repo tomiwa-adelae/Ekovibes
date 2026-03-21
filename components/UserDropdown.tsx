@@ -15,6 +15,7 @@ import {
 import { useSignout } from "@/hooks/use-signout";
 import {
   IconBell,
+  IconBuilding,
   IconLayoutDashboard,
   IconShieldFilled,
   IconTicket,
@@ -82,6 +83,12 @@ export function UserDropdown() {
             <Link href="/notifications">
               <IconBell size={16} className="opacity-60" aria-hidden="true" />
               <span>Notifications</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/venue-dashboard">
+              <IconBuilding size={16} className="opacity-60" aria-hidden="true" />
+              <span>Venue Dashboard</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
