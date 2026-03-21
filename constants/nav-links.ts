@@ -54,11 +54,6 @@ export const adminNavLinks = [
     icon: IconShoppingBag,
   },
   {
-    label: "Inventory",
-    slug: "/a/vault/products",
-    icon: IconArchive,
-  },
-  {
     label: "Orders",
     slug: "/a/vault/orders",
     icon: IconShoppingBag,
