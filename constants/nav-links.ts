@@ -19,7 +19,6 @@ export const homeNavLinks = [
   { label: "Experiences", slug: "/ticketing" }, // Events, Concerts
   { label: "The Vault", slug: "/vault" }, // E-commerce/Merch
   { label: "Vibe Report", slug: "/media" }, // Blog/Video content
-  { label: "Concierge", slug: "/concierge", comingSoon: true }, // High-end services
 ];
 
 export const homeNavLinksMobile = [
@@ -27,6 +26,7 @@ export const homeNavLinksMobile = [
   { label: "Experiences", slug: "/ticketing" }, // Events, Concerts
   { label: "The Vault", slug: "/vault" }, // E-commerce/Merch
   { label: "Vibe Report", slug: "/media" }, // Blog/Video content
+  { label: "For Venues", slug: "/partners" }, // High-end services
   { label: "Concierge", slug: "/concierge", comingSoon: true }, // High-end services
 ];
 
