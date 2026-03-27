@@ -14,7 +14,14 @@ import {
   IconWallet,
 } from "@tabler/icons-react";
 
-export const homeNavLinks = [
+interface NavLinks {
+  comingSoon?: boolean;
+  label: string;
+  slug: string;
+}
+[];
+
+export const homeNavLinks: NavLinks[] = [
   { label: "The Black Book", slug: "/reservations" }, // Clubs, Restaurants
   { label: "Experiences", slug: "/ticketing" }, // Events, Concerts
   { label: "The Vault", slug: "/vault" }, // E-commerce/Merch
