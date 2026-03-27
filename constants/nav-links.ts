@@ -33,6 +33,7 @@ export const homeNavLinksMobile = [
 export const adminNavLinks = [
   // Core Management
   { label: "Dashboard", slug: "/a/dashboard", icon: IconLayoutDashboard },
+  { label: "Users", slug: "/a/users", icon: IconUsers },
   { label: "Members", slug: "/a/membership", icon: IconUsers }, // Membership applications
 
   // The Black Book (Reservations)
