@@ -10,6 +10,7 @@ import {
   IconShoppingBag,
   IconTicket,
   IconUsers,
+  IconUsersGroup,
   IconVideo,
   IconWallet,
 } from "@tabler/icons-react";
@@ -18,6 +19,8 @@ interface NavLinks {
   comingSoon?: boolean;
   label: string;
   slug: string;
+  superAdminOnly?: boolean;
+  module?: string;
 }
 [];
 
@@ -40,35 +43,57 @@ export const homeNavLinksMobile = [
 export const adminNavLinks = [
   // Core Management
   { label: "Dashboard", slug: "/a/dashboard", icon: IconLayoutDashboard },
-  { label: "Users", slug: "/a/users", icon: IconUsers },
-  { label: "Members", slug: "/a/membership", icon: IconUsers }, // Membership applications
+  { label: "Users", slug: "/a/users", icon: IconUsers, module: "users" },
+  { label: "Members", slug: "/a/membership", icon: IconUsers, module: "users" },
 
   // The Black Book (Reservations)
-  { label: "Bookings", slug: "/a/reservations", icon: IconCalendar },
-  { label: "Venues", slug: "/a/venues", icon: IconBuilding },
+  {
+    label: "Bookings",
+    slug: "/a/reservations",
+    icon: IconCalendar,
+    module: "reservations",
+  },
+  {
+    label: "Venues",
+    slug: "/a/venues",
+    icon: IconBuilding,
+    module: "reservations",
+  },
 
   // Vendors
-  { label: "Vendors", slug: "/a/vendors", icon: IconBuilding },
+  {
+    label: "Vendors",
+    slug: "/a/vendors",
+    icon: IconBuilding,
+    module: "vendors",
+  },
 
   // Experiences (Ticketing)
-  { label: "Events", slug: "/a/events", icon: IconTicket },
-  { label: "Ticket Orders", slug: "/a/orders", icon: IconCalendar },
-  { label: "Scanner Mode", slug: "/a/scan", icon: IconQrcode }, // For door staff
+  { label: "Events", slug: "/a/events", icon: IconTicket, module: "events" },
+  {
+    label: "Ticket Orders",
+    slug: "/a/orders",
+    icon: IconCalendar,
+    module: "events",
+  },
+  {
+    label: "Scanner Mode",
+    slug: "/a/scan",
+    icon: IconQrcode,
+    module: "events",
+  },
 
   // The Vault (Shop)
-  {
-    label: "Shop",
-    slug: "/a/vault",
-    icon: IconShoppingBag,
-  },
+  { label: "Shop", slug: "/a/vault", icon: IconShoppingBag, module: "vault" },
   {
     label: "Orders",
     slug: "/a/vault/orders",
     icon: IconShoppingBag,
+    module: "vault",
   },
 
   // Vibe Report (Media)
-  { label: "CMS / Media", slug: "/a/media", icon: IconVideo },
+  { label: "CMS / Media", slug: "/a/media", icon: IconVideo, module: "media" },
 
   // High-End (Concierge)
   {
@@ -76,11 +101,29 @@ export const adminNavLinks = [
     slug: "/a/requests",
     icon: IconBell,
     comingSoon: true,
-  }, // Jet/Yacht/Protocol
+    module: "concierge",
+  },
 
   // System
-  { label: "Withdrawals", slug: "/a/withdrawals", icon: IconWallet },
-  { label: "Financials", slug: "/a/finance", icon: IconCash, comingSoon: true },
+  {
+    label: "Withdrawals",
+    slug: "/a/withdrawals",
+    icon: IconWallet,
+    module: "withdrawals",
+  },
+  {
+    label: "Financials",
+    slug: "/a/finance",
+    icon: IconCash,
+    comingSoon: true,
+    module: "withdrawals",
+  },
+  {
+    label: "Team",
+    slug: "/a/team",
+    icon: IconUsersGroup,
+    superAdminOnly: true,
+  },
 ];
 
 export const venueOwnerNavLinks = [

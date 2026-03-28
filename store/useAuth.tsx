@@ -22,6 +22,8 @@ export type User = {
   onboardingCompleted?: boolean;
   isAdmin?: boolean;
   isVendor?: boolean;
+  adminPosition?: "SUPER_ADMIN" | "ADMIN" | "MODERATOR" | null;
+  adminModules?: string[] | null;
 } | null;
 
 type AuthState = {

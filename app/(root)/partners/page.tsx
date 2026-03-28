@@ -18,9 +18,20 @@ import { useAuth } from "@/store/useAuth";
 import { VENUE_CATEGORY_LABELS } from "@/lib/reservations-api";
 
 const FEATURED_CATEGORIES = [
-  "RESTAURANT", "BAR", "NIGHTCLUB", "LOUNGE", "ROOFTOP_BAR",
-  "PRIVATE_DINING", "SPA", "PRIVATE_MEMBERS_CLUB", "BEACH_CLUB",
-  "JAZZ_CLUB", "COCKTAIL_BAR", "WINE_BAR", "YACHT", "POP_UP",
+  "RESTAURANT",
+  "BAR",
+  "NIGHTCLUB",
+  "LOUNGE",
+  "ROOFTOP_BAR",
+  "PRIVATE_DINING",
+  "SPA",
+  "PRIVATE_MEMBERS_CLUB",
+  "BEACH_CLUB",
+  "JAZZ_CLUB",
+  "COCKTAIL_BAR",
+  "WINE_BAR",
+  "YACHT",
+  "POP_UP",
 ] as const;
 
 const BENEFITS = [
@@ -88,12 +99,15 @@ export default function PartnersPage() {
   const isLoggedIn = _hasHydrated && !!user;
 
   const handleCTA = () => {
-    router.push(isLoggedIn ? "/venue-dashboard" : "/register");
+    if (isLoggedIn) {
+      router.push(user?.role === "VENUE_OWNER" ? "/venue-dashboard" : "/venue-dashboard/onboard");
+    } else {
+      router.push("/register?intent=venue_owner");
+    }
   };
 
   return (
     <div className="bg-background text-foreground overflow-x-hidden">
-
       {/* ── Hero (always dark — image backdrop) ──────────────────────────── */}
       <section className="relative min-h-[92vh] flex items-end md:items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
@@ -128,7 +142,6 @@ export default function PartnersPage() {
             <div className="flex flex-wrap gap-3 items-center">
               <Button onClick={handleCTA}>
                 {isLoggedIn ? "Open Dashboard" : "Apply Now"}
-                <IconArrowRight size={15} className="ml-1" />
               </Button>
               {!isLoggedIn && (
                 <Button
@@ -136,14 +149,17 @@ export default function PartnersPage() {
                   asChild
                   className="text-white/60 hover:text-white hover:bg-white/10"
                 >
-                  <Link href="/login">Sign in →</Link>
+                  <Link href="/login">Sign in</Link>
                 </Button>
               )}
             </div>
             {!isLoggedIn && (
               <p className="text-xs text-white/30 mt-4">
                 An Ekovibe account is required to list your venue.{" "}
-                <Link href="/register" className="text-white/60 hover:text-white underline">
+                <Link
+                  href="/register?intent=venue_owner"
+                  className="text-white/60 hover:text-white underline"
+                >
                   Create one free.
                 </Link>
               </p>
@@ -161,7 +177,10 @@ export default function PartnersPage() {
         <div className="flex gap-6 whitespace-nowrap">
           <div className="flex gap-6 shrink-0">
             {FEATURED_CATEGORIES.map((c) => (
-              <span key={c} className="text-sm uppercase text-background/50 shrink-0">
+              <span
+                key={c}
+                className="text-sm uppercase text-background/50 shrink-0"
+              >
                 {VENUE_CATEGORY_LABELS[c]}
                 <span className="ml-6 text-background/20">·</span>
               </span>
@@ -174,7 +193,6 @@ export default function PartnersPage() {
       <section className="bg-background border-b border-border">
         <div className="container py-16 md:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-
             {/* Image stack */}
             <div className="relative h-[480px] hidden lg:block">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -228,7 +246,6 @@ export default function PartnersPage() {
               <div className="mt-10">
                 <Button onClick={handleCTA}>
                   {isLoggedIn ? "Go to Dashboard" : "Start Your Application"}
-                  <IconArrowRight size={14} className="ml-1" />
                 </Button>
               </div>
             </div>
@@ -311,7 +328,8 @@ export default function PartnersPage() {
               </h2>
               <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
                 We review every application manually. We're looking for quality
-                experiences that align with the Ekovibe ethos — not just any listing.
+                experiences that align with the Ekovibe ethos — not just any
+                listing.
               </p>
             </div>
             <ul className="space-y-4 pt-2">
@@ -386,7 +404,9 @@ export default function PartnersPage() {
         <div className="relative z-10 container py-24 text-center">
           <p className="text-xs uppercase text-white/40 mb-4">Ready?</p>
           <h2 className="text-4xl md:text-6xl font-bold uppercase text-white mb-6 leading-none">
-            Join The<br />Black Book
+            Join The
+            <br />
+            Black Book
           </h2>
           <p className="text-white/40 text-sm max-w-md mx-auto mb-10 leading-relaxed">
             Applications are reviewed by our team. Once approved, you can
@@ -410,14 +430,16 @@ export default function PartnersPage() {
           {!isLoggedIn && (
             <p className="text-xs text-white/25 mt-5">
               New to Ekovibe?{" "}
-              <Link href="/register" className="text-white/50 underline hover:text-white">
+              <Link
+                href="/register?intent=venue_owner"
+                className="text-white/50 underline hover:text-white"
+              >
                 Create your account →
               </Link>
             </p>
           )}
         </div>
       </section>
-
     </div>
   );
 }

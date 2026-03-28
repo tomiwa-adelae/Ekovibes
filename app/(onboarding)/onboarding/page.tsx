@@ -1,6 +1,6 @@
 "use client";
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useTransition, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,6 +24,7 @@ import {
   IconSparkles,
   IconUsers,
   IconBuildingStore,
+  IconBuilding,
   IconCheck,
 } from "@tabler/icons-react";
 import {
@@ -73,14 +74,24 @@ type VendorValues = z.infer<typeof vendorSchema>;
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setUser } = useAuth();
   const [pending, startTransition] = useTransition();
 
   // Step logic:
-  // USER path:   0 (choose type) → 1 (vibes) → 2 (channels) → 3 (done)
-  // VENDOR path: 0 (choose type) → 1 (brand info) → 2 (event vibes) → 3 (done)
+  // USER path:         0 (choose type) → 1 (vibes) → 2 (channels) → 3 (done)
+  // VENDOR path:       0 (choose type) → 1 (brand info) → 2 (event vibes) → 3 (done)
+  // VENUE_OWNER path:  0 (choose type) → 1 (what to expect) → redirect /venue-dashboard/onboard
   const [step, setStep] = useState(0);
-  const [accountType, setAccountType] = useState<"user" | "vendor" | null>(null);
+  const [accountType, setAccountType] = useState<"user" | "vendor" | "venue_owner" | null>(null);
+
+  // Auto-select venue_owner when arriving from /partners
+  useEffect(() => {
+    if (searchParams.get("intent") === "venue_owner") {
+      setAccountType("venue_owner");
+      setStep(1);
+    }
+  }, [searchParams]);
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [vibeError, setVibeError] = useState(false);
 
@@ -101,12 +112,16 @@ export default function OnboardingPage() {
     );
   };
 
-  const handleTypeSelect = (type: "user" | "vendor") => {
+  const handleTypeSelect = (type: "user" | "vendor" | "venue_owner") => {
     setAccountType(type);
     setStep(1);
   };
 
   const handleNext = async () => {
+    if (accountType === "venue_owner" && step === 1) {
+      router.push("/venue-dashboard/onboard");
+      return;
+    }
     if (accountType === "vendor" && step === 1) {
       const valid = await vendorForm.trigger();
       if (!valid) return;
@@ -202,6 +217,23 @@ export default function OnboardingPage() {
                     <p className="font-semibold text-sm">I&apos;m an Event Organizer</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Create events, manage tickets, and track your revenue
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card
+                onClick={() => handleTypeSelect("venue_owner")}
+                className="cursor-pointer border-border hover:border-foreground/40 transition-all"
+              >
+                <CardContent className="flex items-center gap-4 p-5">
+                  <div className="size-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <IconBuilding size={20} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">I&apos;m a Venue Owner</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      List your venue on The Black Book and accept reservations
                     </p>
                   </div>
                 </CardContent>
@@ -307,6 +339,35 @@ export default function OnboardingPage() {
                 ))}
               </div>
             </Form>
+          </div>
+        )}
+
+        {/* ── VENUE OWNER PATH: STEP 1 — WHAT TO EXPECT ── */}
+        {accountType === "venue_owner" && step === 1 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <CardHeader className="flex flex-col text-center items-center pt-4">
+              <Link
+                href="/"
+                className="flex items-center hover:text-primary text-slate-900 mb-1.5"
+              >
+                <Logo type="green" size="h-10" />
+              </Link>
+              <CardDescription>
+                You&apos;re applying to list your venue on The Black Book.
+              </CardDescription>
+            </CardHeader>
+            <div className="mt-4 mb-4 space-y-3">
+              {[
+                { step: "01", text: "Set up your business and bank details" },
+                { step: "02", text: "Apply to list your venue — our team reviews within 1–3 days" },
+                { step: "03", text: "Go live and start accepting reservations" },
+              ].map((item) => (
+                <div key={item.step} className="flex items-center gap-4 p-4 rounded-xl border border-border">
+                  <span className="text-xs font-black text-muted-foreground tabular-nums shrink-0">{item.step}</span>
+                  <p className="text-sm text-muted-foreground">{item.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -455,7 +516,9 @@ export default function OnboardingPage() {
               <CardDescription>
                 {accountType === "vendor"
                   ? "Your organizer profile is live. Head to your dashboard to create your first event."
-                  : "Your Ekovibe identity is now live. We've curated your first Vibe Report based on your interests."}
+                  : accountType === "venue_owner"
+                    ? "Your venue owner account is ready. Head to your dashboard to list your first venue."
+                    : "Your Ekovibe identity is now live. We've curated your first Vibe Report based on your interests."}
               </CardDescription>
             </CardHeader>
           </div>
@@ -465,7 +528,9 @@ export default function OnboardingPage() {
         <div className="flex flex-col gap-4">
           {step > 0 && step < 3 && (
             <Button type="button" onClick={handleNext} className="w-full">
-              Continue
+              {accountType === "venue_owner" && step === 1
+                ? "Set Up My Account"
+                : "Continue"}
             </Button>
           )}
           {step === 3 && (
@@ -478,6 +543,8 @@ export default function OnboardingPage() {
               {pending ? (
                 <Loader text="Setting up..." />
               ) : accountType === "vendor" ? (
+                "Go to My Dashboard"
+              ) : accountType === "venue_owner" ? (
                 "Go to My Dashboard"
               ) : (
                 "Enter the Ecosystem"

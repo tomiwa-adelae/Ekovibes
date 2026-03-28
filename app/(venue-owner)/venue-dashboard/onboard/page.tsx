@@ -27,6 +27,8 @@ import {
   verifyBankAccount,
   type Bank,
 } from "@/lib/reservations-api";
+import { postData } from "@/lib/api";
+import { useAuth } from "@/store/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,6 +64,7 @@ type Step1Values = z.infer<typeof step1Schema>;
 
 export default function VenueOwnerOnboardPage() {
   const router = useRouter();
+  const { setUser } = useAuth();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [step0Data, setStep0Data] = useState<Step0Values | null>(null);
@@ -142,6 +145,12 @@ export default function VenueOwnerOnboardPage() {
         accountNumber: values.accountNumber,
         accountName: verifiedAccountName,
       });
+      // Set VENUE_OWNER role and mark onboarding complete
+      const updatedUser = await postData<any>("/auth/onboarding", {
+        accountType: "venue_owner",
+        businessName: step0Data.businessName,
+      });
+      setUser(updatedUser);
       toast.success("Account set up! Welcome to The Black Book.");
       router.replace("/venue-dashboard");
     } catch (e: any) {

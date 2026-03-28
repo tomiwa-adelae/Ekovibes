@@ -10,7 +10,7 @@ export const UpcomingEvents = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getPublicEvents({ limit: 4 })
+    getPublicEvents({ limit: 6 })
       .then((res) => setEvents(res.data))
       .catch(() => setEvents([]))
       .finally(() => setLoading(false));
@@ -25,7 +25,7 @@ export const UpcomingEvents = () => {
         {/* Header */}
         <div className="flex justify-between items-end mb-12 border-b border-border pb-8">
           <div>
-            <h2 className="text-sm uppercase tracking-[0.3em] text-muted-foreground mb-4">
+            <h2 className="text-sm uppercase text-muted-foreground mb-4">
               Live Now
             </h2>
             <h3 className="text-3xl md:text-5xl font-bold tracking-tighter uppercase">
@@ -51,7 +51,7 @@ export const UpcomingEvents = () => {
             <IconLoader2 size={24} className="animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}

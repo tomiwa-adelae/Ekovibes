@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import * as RPNInput from "react-phone-number-input";
@@ -52,6 +52,8 @@ import { RegisterSchema, RegisterSchemaType } from "@/lib/zodSchema";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isVenueOwnerIntent = searchParams.get("intent") === "venue_owner";
   const { setUser } = useAuth();
 
   const [pending, startTransition] = useTransition();
@@ -125,8 +127,10 @@ export default function RegisterPage() {
           data,
         );
         setUser(res.user);
-        toast.success("Welcome to Ekovibes!");
-        if (data.tier === "gold") {
+        toast.success("Welcome to Ekovibe!");
+        if (isVenueOwnerIntent) {
+          router.push("/onboarding?intent=venue_owner");
+        } else if (data.tier === "gold") {
           router.push("/membership?tier=gold");
         } else {
           router.push("/onboarding");
@@ -146,7 +150,11 @@ export default function RegisterPage() {
         >
           <Logo type="green" size="h-10" />
         </Link>
-        <CardDescription>Create an account with Ekovibe</CardDescription>
+        <CardDescription>
+          {isVenueOwnerIntent
+            ? "Create your account to list your venue on The Black Book"
+            : "Create an account with Ekovibe"}
+        </CardDescription>
       </CardHeader>
       <CardContent className="pb-4">
         <Form {...form}>
@@ -154,7 +162,7 @@ export default function RegisterPage() {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-5 mb-10"
           >
-            <FormField
+            {!isVenueOwnerIntent && <FormField
               control={form.control}
               name="tier"
               render={({ field }) => (
@@ -203,7 +211,7 @@ export default function RegisterPage() {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            />}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
               <FormField
                 control={form.control}

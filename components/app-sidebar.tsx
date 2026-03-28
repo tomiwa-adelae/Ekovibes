@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/store/useAuth";
 import { getNavByRole } from "@/lib/getNavByRole";
 import { Logo } from "./Logo";
+import { usePathname } from "next/navigation";
 
 const sidebarData = {
   navSecondary: [
@@ -28,8 +29,13 @@ const sidebarData = {
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
+  const pathname = usePathname();
+  const isAdminArea = pathname.startsWith("/a/") || pathname === "/a";
 
-  const navItems = React.useMemo(() => getNavByRole(user?.role), [user?.role]);
+  const navItems = React.useMemo(
+    () => getNavByRole(user, isAdminArea),
+    [user, isAdminArea],
+  );
 
   // if (isLoading) return null; // or skeleton
 

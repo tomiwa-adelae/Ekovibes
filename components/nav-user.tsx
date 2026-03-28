@@ -6,6 +6,8 @@ import {
   IconLogout,
   IconNotification,
   IconUserCircle,
+  IconArrowLeft,
+  IconShieldFilled,
 } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,11 +30,15 @@ import { DEFAULT_PROFILE_IMAGE } from "@/constants";
 import { useAuth } from "@/store/useAuth";
 import { useSignout } from "@/hooks/use-signout";
 import { Badge } from "./ui/badge";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function NavUser() {
   const { user } = useAuth();
   const { isMobile } = useSidebar();
   const handleSignout = useSignout();
+  const pathname = usePathname();
+  const isAdminArea = pathname.startsWith("/a/") || pathname === "/a";
 
   if (!user) return null;
 
@@ -112,6 +118,20 @@ export function NavUser() {
                 </Badge>
               </DropdownMenuItem>
             </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              {isAdminArea ? (
+                <Link href="/dashboard">
+                  <IconArrowLeft />
+                  Member View
+                </Link>
+              ) : (
+                <Link href="/a/dashboard">
+                  <IconShieldFilled />
+                  Admin Dashboard
+                </Link>
+              )}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignout}>
               <IconLogout />

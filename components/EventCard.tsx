@@ -2,10 +2,10 @@ import { DEFAULT_IMAGE } from "@/constants";
 import { IconCalendarEvent, IconLock, IconMapPin } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
 import { Button } from "./ui/button";
 import { Event, formatNaira } from "@/lib/events-api";
 import { formatDate } from "@/lib/utils";
+import { ScrollingTitle } from "./ScrollingTitle";
 
 export const EventCard = ({ event }: { event: Event }) => {
   const minPrice = event.ticketTiers.length
@@ -45,12 +45,11 @@ export const EventCard = ({ event }: { event: Event }) => {
 
       <div className="grow">
         <div className="flex justify-between items-start mb-2">
-          <Link
+          <ScrollingTitle
             href={`/${event.slug}`}
-            className="text-lg hover:underline hover:text-primary font-semibold line-clamp-2 uppercase max-w-[70%]"
-          >
-            {event.title}
-          </Link>
+            title={event.title}
+            className="max-w-[70%]"
+          />
           <span className="text-[10px] font-bold text-muted-foreground uppercase pt-1">
             {allSoldOut
               ? "Sold Out"
