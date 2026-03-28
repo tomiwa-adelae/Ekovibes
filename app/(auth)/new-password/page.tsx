@@ -314,10 +314,14 @@ function NewPasswordContent() {
   );
 }
 
-export default function NewPasswordPage() {
+function NewPasswordPage() {
   return (
     <Suspense>
       <NewPasswordContent />
     </Suspense>
   );
+}
+
+export default function Page() {
+  return <Suspense><NewPasswordPage /></Suspense>;
 }

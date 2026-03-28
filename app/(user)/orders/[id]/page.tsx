@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -39,7 +39,7 @@ const STATUS_STEPS = [
   "DELIVERED",
 ] as const;
 
-export default function UserOrderDetailPage() {
+function UserOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -332,4 +332,8 @@ export default function UserOrderDetailPage() {
       </Button>
     </div>
   );
+}
+
+export default function Page() {
+  return <Suspense><UserOrderDetailPage /></Suspense>;
 }

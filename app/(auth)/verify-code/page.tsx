@@ -163,10 +163,14 @@ function VerifyCodeContent() {
   );
 }
 
-export default function VerifyCodePage() {
+function VerifyCodePage() {
   return (
     <Suspense>
       <VerifyCodeContent />
     </Suspense>
   );
+}
+
+export default function Page() {
+  return <Suspense><VerifyCodePage /></Suspense>;
 }

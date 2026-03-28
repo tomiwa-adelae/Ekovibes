@@ -275,10 +275,14 @@ function VibeReportContent() {
   );
 }
 
-export default function VibeReportPage() {
+function VibeReportPage() {
   return (
     <Suspense>
       <VibeReportContent />
     </Suspense>
   );
+}
+
+export default function Page() {
+  return <Suspense><VibeReportPage /></Suspense>;
 }

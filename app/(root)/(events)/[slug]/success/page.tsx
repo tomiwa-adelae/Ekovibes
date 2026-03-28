@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { IconCheck, IconLoader2 } from "@tabler/icons-react";
@@ -160,4 +160,6 @@ const SuccessPage = () => {
   );
 };
 
-export default SuccessPage;
+export default function Page() {
+  return <Suspense><SuccessPage /></Suspense>;
+}

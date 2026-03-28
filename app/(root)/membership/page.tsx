@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import MembershipClient from "./_components/MembershipClient";
 
 export const metadata: Metadata = {
@@ -15,5 +16,5 @@ export const metadata: Metadata = {
 };
 
 export default function MembershipPage() {
-  return <MembershipClient />;
+  return <Suspense><MembershipClient /></Suspense>;
 }

@@ -90,7 +90,7 @@ function VerifyContent() {
   );
 }
 
-export default function ReservationVerifyPage() {
+function ReservationVerifyPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Suspense
@@ -107,4 +107,8 @@ export default function ReservationVerifyPage() {
       </Suspense>
     </div>
   );
+}
+
+export default function Page() {
+  return <Suspense><ReservationVerifyPage /></Suspense>;
 }

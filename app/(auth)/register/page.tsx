@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -50,7 +50,7 @@ import { Progress } from "@/components/ui/progress";
 import { Loader } from "@/components/Loader";
 import { RegisterSchema, RegisterSchemaType } from "@/lib/zodSchema";
 
-export default function RegisterPage() {
+function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isVenueOwnerIntent = searchParams.get("intent") === "venue_owner";
@@ -465,4 +465,8 @@ export default function RegisterPage() {
       </CardContent>
     </Card>
   );
+}
+
+export default function Page() {
+  return <Suspense><RegisterPage /></Suspense>;
 }

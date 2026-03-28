@@ -118,7 +118,7 @@ function MembershipCallbackInner() {
   );
 }
 
-export default function MembershipPaymentCallbackPage() {
+function MembershipPaymentCallbackPage() {
   return (
     <Suspense
       fallback={
@@ -130,4 +130,8 @@ export default function MembershipPaymentCallbackPage() {
       <MembershipCallbackInner />
     </Suspense>
   );
+}
+
+export default function Page() {
+  return <Suspense><MembershipPaymentCallbackPage /></Suspense>;
 }

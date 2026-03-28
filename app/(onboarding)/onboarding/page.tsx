@@ -1,5 +1,5 @@
 "use client";
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,7 +72,7 @@ const vendorSchema = z.object({
 type ChannelValues = z.infer<typeof channelSchema>;
 type VendorValues = z.infer<typeof vendorSchema>;
 
-export default function OnboardingPage() {
+function OnboardingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser } = useAuth();
@@ -564,4 +564,8 @@ export default function OnboardingPage() {
       </CardContent>
     </Card>
   );
+}
+
+export default function Page() {
+  return <Suspense><OnboardingPage /></Suspense>;
 }
