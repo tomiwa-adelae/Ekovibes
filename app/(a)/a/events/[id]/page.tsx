@@ -418,7 +418,7 @@ const AdminEventDetailPage = () => {
                     </TableCell>
                     <TableCell>
                       <NairaIcon />
-                      {formatMoneyInput(order.total)}
+                      {formatNaira(order.total)}
                     </TableCell>
                     <TableCell className="text-right">
                       {formatDate(order.createdAt)}
