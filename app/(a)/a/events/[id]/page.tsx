@@ -416,10 +416,7 @@ const AdminEventDetailPage = () => {
                     <TableCell>
                       {order.items[0]?.ticketTier?.name ?? "—"}
                     </TableCell>
-                    <TableCell>
-                      <NairaIcon />
-                      {formatNaira(order.total)}
-                    </TableCell>
+                    <TableCell>{formatNaira(order.total)}</TableCell>
                     <TableCell className="text-right">
                       {formatDate(order.createdAt)}
                     </TableCell>
