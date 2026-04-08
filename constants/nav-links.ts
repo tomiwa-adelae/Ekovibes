@@ -5,6 +5,7 @@ import {
   IconCalendar,
   IconCash,
   IconLayoutDashboard,
+  IconMail,
   IconQrcode,
   IconSettings,
   IconShoppingBag,
@@ -102,6 +103,13 @@ export const adminNavLinks = [
     icon: IconBell,
     comingSoon: true,
     module: "concierge",
+  },
+
+  // Newsletter
+  {
+    label: "Vibe List",
+    slug: "/a/newsletter",
+    icon: IconMail,
   },
 
   // System

@@ -38,7 +38,7 @@ import {
 import Image from "next/image";
 import { DEFAULT_IMAGE } from "@/constants";
 import { Progress } from "@/components/ui/progress";
-import { formatDate, formatMoneyInput } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import {
   Table,
   TableBody,

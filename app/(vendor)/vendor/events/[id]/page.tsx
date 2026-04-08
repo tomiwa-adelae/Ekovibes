@@ -40,7 +40,7 @@ import {
   type EventStatus,
 } from "@/lib/events-api";
 import { PageHeader } from "@/components/PageHeader";
-import { formatDate, formatMoneyInput } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -557,8 +557,7 @@ export default function VendorEventDetailPage() {
                       {order.items[0]?.ticketTier?.name ?? "—"}
                     </TableCell>
                     <TableCell>
-                      <NairaIcon />
-                      {formatMoneyInput(order.total)}
+                      {formatNaira(order.total)}
                     </TableCell>
                     <TableCell className="text-right">
                       {formatDate(order.createdAt)}

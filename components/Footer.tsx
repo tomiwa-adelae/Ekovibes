@@ -1,9 +1,48 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Logo } from "./Logo";
 import { PHONE_NUMBER, WHATSAPP_LINK } from "@/constants";
 import { env } from "@/lib/env";
 
+async function subscribeToNewsletter(email: string) {
+  const res = await fetch(
+    `${env.NEXT_PUBLIC_BACKEND_URL}/newsletter/subscribe`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    },
+  );
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.message ?? "Subscription failed. Please try again.");
+  }
+  return data;
+}
+
 export const Footer = () => {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubscribe = async () => {
+    if (!email.trim()) return;
+    setLoading(true);
+    try {
+      await subscribeToNewsletter(email.trim());
+      setSubmitted(true);
+      setEmail("");
+      toast.success("Check your inbox to confirm your subscription.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Something went wrong. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <footer className="bg-muted text-foreground pt-24 pb-12 border-t border-border">
       <div className="container">
@@ -106,22 +145,38 @@ export const Footer = () => {
 
           {/* Newsletter */}
           <div>
-            <h4 className="text-[10px] uppercase  text-muted-foreground mb-6">
+            <h4 className="text-[10px] uppercase text-muted-foreground mb-6">
               The Vibe List
             </h4>
-            <p className="text-[10px] text-white/40 mb-4 uppercase ">
-              Join the inner circle for weekly drops.
-            </p>
-            <div className="flex border-b border-border pb-2">
-              <input
-                type="email"
-                placeholder="EMAIL ADDRESS"
-                className="bg-transparent border-none outline-none text-xs w-full placeholder:text-muted-foreground/40"
-              />
-              <button className="text-[10px] font-bold uppercase  hover:text-muted-foreground transition-colors">
-                Join
-              </button>
-            </div>
+            {submitted ? (
+              <p className="text-[10px] text-primary uppercase tracking-widest">
+                Check your inbox to confirm.
+              </p>
+            ) : (
+              <>
+                <p className="text-[10px] text-white/40 mb-4 uppercase">
+                  Join the inner circle for weekly drops.
+                </p>
+                <div className="flex border-b border-border pb-2">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubscribe()}
+                    placeholder="EMAIL ADDRESS"
+                    disabled={loading}
+                    className="bg-transparent border-none outline-none text-xs w-full placeholder:text-muted-foreground/40 disabled:opacity-50"
+                  />
+                  <button
+                    onClick={handleSubscribe}
+                    disabled={loading || !email.trim()}
+                    className="text-[10px] font-bold uppercase hover:text-muted-foreground transition-colors disabled:opacity-40 shrink-0"
+                  >
+                    {loading ? "..." : "Join"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
